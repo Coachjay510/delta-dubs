@@ -90,7 +90,7 @@ export default function App() {
         <TopBar />
         <main style={{ flex: 1 }}>
           <Routes>
-            <Route path="/"           element={role === 'Player' ? <PlayerPortal /> : <Dashboard />} />
+            <Route path="/"           element={role === 'Player' ? <Navigate to="/portal" replace /> : <Dashboard />} />
             <Route path="/players"    element={<Players />} />
             <Route path="/teams"      element={<Teams />} />
             <Route path="/schedule"   element={<Schedule />} />

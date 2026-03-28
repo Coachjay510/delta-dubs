@@ -6,24 +6,26 @@ import styles from './Sidebar.module.css'
 
 const NAV = [
   { section: 'Overview' },
-  { to: '/',           icon: '⬡', label: 'Dashboard' },
+  { to: '/',           icon: '⬡', label: 'Dashboard',       hideFor: ['Player'] },
+  { to: '/portal',     icon: '⬡', label: 'My Profile',      showFor: ['Player'] },
   { section: 'Roster' },
   { to: '/players',    icon: '○', label: 'Players' },
   { to: '/teams',      icon: '◈', label: 'Teams' },
-  { section: 'Operations' },
+  { section: 'Schedule & Stats' },
   { to: '/schedule',   icon: '◷', label: 'Schedule' },
   { to: '/attendance', icon: '✓', label: 'Attendance' },
   { to: '/stats',      icon: '◎', label: 'Stats' },
+  { to: '/college',    icon: '◉', label: 'College' },
   { section: 'Admin' },
-  { to: '/payments',   icon: '$', label: 'Payments',  badge: 'pay' },
+  { to: '/payments',   icon: '$', label: 'Payments',         badge: 'pay' },
   { to: '/finance',    icon: '▲', label: 'Budget & Finance' },
   { to: '/spending',   icon: '▸', label: 'Spending Tracker' },
   { to: '/history',    icon: '◫', label: 'Season History' },
-  { to: '/college',    icon: '◉', label: 'College' },
   { to: '/messages',   icon: '◌', label: 'Messages' },
   { to: '/admin',      icon: '◆', label: 'Admin Portal' },
   { to: '/staff',      icon: '👥', label: 'Staff' },
-  { to: '/filmroom',   icon: '▶', label: 'Film Room', accent: true },
+  { to: '/filmroom',   icon: '▶', label: 'Film Room',        accent: true },
+  { to: '/superadmin', icon: '🏢', label: 'NP Platform',     superOnly: true },
 ]
 
 export default function Sidebar() {
@@ -83,7 +85,10 @@ export default function Sidebar() {
           if (item.section) return (
             <div key={i} className={styles.section}>{item.section}</div>
           )
-          if (!canAccess(item.to)) return null
+          if (item.hideFor?.includes(role)) return null
+          if (item.showFor && !item.showFor.includes(role)) return null
+          if (!canAccess(item.to) && !item.superOnly && !item.showFor) return null
+          if (item.superOnly && user?.email !== 'nextplaysports.ca@gmail.com') return null
           return (
             <NavLink
               key={item.to}

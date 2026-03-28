@@ -8,9 +8,9 @@ const roleLevel = (role) => ROLES.indexOf(role ?? 'Volunteer')
 // ── Page permissions ────────────────────────────────────────────────
 const PAGE_ACCESS = {
   '/':           ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
-  '/players':    ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
-  '/teams':      ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
-  '/schedule':   ['Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
+  '/players':    ['Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
+  '/teams':      ['Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
+  '/schedule':   ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
   '/attendance': ['Team Manager', 'Coach', 'Head Admin'],
   '/stats':      ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
   '/payments':   ['Team Manager', 'Head Admin'],
@@ -22,6 +22,7 @@ const PAGE_ACCESS = {
   '/admin':      ['Head Admin'],
   '/staff':      ['Head Admin'],
   '/filmroom':   ['Coach', 'Head Admin'],
+  '/superadmin': ['Head Admin'],
 }
 
 // ── Finance cards on dashboard ──────────────────────────────────────

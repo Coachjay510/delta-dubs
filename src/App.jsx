@@ -20,6 +20,8 @@ import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
 import FilmRoom   from './pages/FilmRoom'
 
+import { useStore } from './hooks/useStore'
+
 function LoadingScreen() {
   return (
     <div style={{
@@ -36,9 +38,10 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const { session, loading } = useAuth()
+  const { session, loading: authLoading } = useAuth()
+  const { loading: dataLoading } = useStore()
 
-  if (loading) return <LoadingScreen />
+  if (authLoading || dataLoading) return <LoadingScreen />
   if (!session) return <Login />
 
   return (

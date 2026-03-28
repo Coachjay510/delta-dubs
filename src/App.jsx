@@ -3,6 +3,8 @@ import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Toast from './components/Toast'
 import { useAuth } from './hooks/useAuth'
+import { useStore } from './hooks/useStore'
+import { usePermissions } from './hooks/usePermissions'
 
 import Login      from './pages/Login'
 import Dashboard  from './pages/Dashboard'
@@ -20,22 +22,10 @@ import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
 import FilmRoom   from './pages/FilmRoom'
 
-import { useStore } from './hooks/useStore'
-import { usePermissions } from './hooks/usePermissions'
-
-function RouteGuard({ path, children }) {
-  const { canAccess } = usePermissions()
-  if (!canAccess(path)) return (
-    <div style={{ padding:40, textAlign:'center' }}>
-      <div style={{ fontFamily:'var(--font-display)', fontSize:32, color:'var(--red)', marginBottom:10 }}>ACCESS DENIED</div>
-      <div style={{ fontSize:13, color:'var(--text3)' }}>You don't have permission to view this page.</div>
-    </div>
-  )
-  return children
-}
+function LoadingScreen() {
   return (
     <div style={{
-      minHeight: '100vh', background: 'var(--bg)',
+      minHeight: '100vh', width: '100%', background: 'var(--bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 16,
     }}>
@@ -47,6 +37,17 @@ function RouteGuard({ path, children }) {
   )
 }
 
+function RouteGuard({ path, children }) {
+  const { canAccess } = usePermissions()
+  if (!canAccess(path)) return (
+    <div style={{ padding:40, textAlign:'center' }}>
+      <div style={{ fontFamily:'var(--font-display)', fontSize:32, color:'var(--red)', marginBottom:10 }}>ACCESS DENIED</div>
+      <div style={{ fontSize:13, color:'var(--text3)' }}>You don't have permission to view this page.</div>
+    </div>
+  )
+  return children
+}
+
 export default function App() {
   const { session, loading, authorized, signOut } = useAuth()
   const { loading: dataLoading } = useStore()
@@ -56,7 +57,7 @@ export default function App() {
 
   if (!authorized) return (
     <div style={{
-      minHeight: '100vh', background: 'var(--bg)',
+      minHeight: '100vh', width: '100%', background: 'var(--bg)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center',
     }}>
@@ -73,7 +74,7 @@ export default function App() {
   )
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       <Sidebar />
       <div style={{
         marginLeft: 'var(--sidebar-w)',
@@ -83,7 +84,7 @@ export default function App() {
         minHeight: '100vh',
       }}>
         <TopBar />
-        <main style={{ flex: 1, padding: 0 }}>
+        <main style={{ flex: 1 }}>
           <Routes>
             <Route path="/"           element={<Dashboard />} />
             <Route path="/players"    element={<Players />} />

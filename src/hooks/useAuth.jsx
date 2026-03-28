@@ -6,47 +6,77 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session,      setSession]      = useState(undefined)
   const [user,         setUser]         = useState(null)
+  const [role,         setRole]         = useState(null)  // 'Head Admin' | 'Coach' | 'Team Manager' | 'Volunteer' | 'Player'
+  const [teamAccess,   setTeamAccess]   = useState('All Teams')
   const [authorized,   setAuthorized]   = useState(false)
   const [authChecking, setAuthChecking] = useState(false)
 
-  async function checkAuthorization(userId, email) {
-    if (!supabase || !userId) return false
-    setAuthChecking(true)
+  async function fetchRole(userId, email) {
+    if (!supabase || !userId) return
     try {
-      // Check org_users table first (auto-created on first sign in)
+      // Check org_users first
       const { data: orgUser } = await supabase
         .from('org_users')
-        .select('id')
+        .select('role, team_access')
         .eq('user_id', userId)
         .eq('org_id', 'delta-dubs')
         .single()
 
-      if (orgUser) { setAuthorized(true); return true }
+      if (orgUser) {
+        setRole(orgUser.role || 'Volunteer')
+        setTeamAccess(orgUser.team_access || 'All Teams')
+        return orgUser.role
+      }
 
-      // Also check admins table by email
+      // Fall back to admins table by email
       const { data: admin } = await supabase
         .from('admins')
-        .select('id')
+        .select('role, team_access')
         .eq('email', email)
         .eq('org_id', 'delta-dubs')
         .single()
 
       if (admin) {
-        // Insert into org_users so future logins are fast
+        setRole(admin.role || 'Coach')
+        setTeamAccess(admin.team_access || 'All Teams')
+        // Create org_users record
         await supabase.from('org_users').insert({
-          org_id: 'delta-dubs',
-          user_id: userId,
-          email,
-          role: 'Admin',
-        })
-        setAuthorized(true)
-        return true
+          org_id: 'delta-dubs', user_id: userId, email,
+          role: admin.role, team_access: admin.team_access,
+        }).then(() => {})
+        return admin.role
       }
 
+      // Check players table by email
+      const { data: player } = await supabase
+        .from('players')
+        .select('id, team, name')
+        .eq('player_email', email)
+        .eq('org_id', 'delta-dubs')
+        .single()
+
+      if (player) {
+        setRole('Player')
+        setTeamAccess(player.team)
+        await supabase.from('org_users').insert({
+          org_id: 'delta-dubs', user_id: userId, email,
+          role: 'Player', team_access: player.team,
+        }).then(() => {})
+        return 'Player'
+      }
+
+      return null
+    } catch { return null }
+  }
+
+  async function checkAuthorization(userId, email) {
+    setAuthChecking(true)
+    try {
+      const foundRole = await fetchRole(userId, email)
+      if (foundRole) { setAuthorized(true); return true }
       setAuthorized(false)
       return false
     } catch {
-      // If org_users trigger already created the record, this is fine
       setAuthorized(true)
       return true
     } finally {
@@ -72,6 +102,8 @@ export function AuthProvider({ children }) {
         await checkAuthorization(session.user.id, session.user.email)
       } else {
         setAuthorized(false)
+        setRole(null)
+        setTeamAccess('All Teams')
       }
     }) ?? { data: null }
 
@@ -86,12 +118,13 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     setAuthorized(false)
+    setRole(null)
     await supabase?.auth.signOut()
   }
 
   return (
     <AuthContext.Provider value={{
-      session, user, authorized, authChecking,
+      session, user, role, teamAccess, authorized, authChecking,
       signInWithGoogle, signOut,
       loading: session === undefined || authChecking,
     }}>

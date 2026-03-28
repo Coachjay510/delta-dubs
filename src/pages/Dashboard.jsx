@@ -1,8 +1,10 @@
 import { useStore, TEAMS } from '../hooks/useStore'
 import { useNavigate } from 'react-router-dom'
+import { usePermissions } from '../hooks/usePermissions'
 
 export default function Dashboard() {
   const { players, schedule, finance, projectedIncome, totalOutstanding, paidCount } = useStore()
+  const { canSeeFinancials } = usePermissions()
   const navigate = useNavigate()
 
   const onRoster  = players.filter(p => p.status === 'On Roster')
@@ -45,24 +47,26 @@ export default function Dashboard() {
           <div className="stat-value">{onRoster.length}</div>
           <div className="stat-sub">Across 4 teams</div>
         </div>
-        <div className="stat-card sc-green">
-          <div className="stat-icon">$</div>
-          <div className="stat-label">Actual Collected</div>
-          <div className="stat-value">{fmtMoney(collected)}</div>
-          <div className="stat-sub">Update in Budget & Finance</div>
-        </div>
-        <div className="stat-card sc-purple">
-          <div className="stat-icon">▲</div>
-          <div className="stat-label">Projected Income</div>
-          <div className="stat-value">{fmtMoney(projectedIncome)}</div>
-          <div className="stat-sub">If all fees paid in full</div>
-        </div>
-        <div className="stat-card sc-blue">
-          <div className="stat-icon">!</div>
-          <div className="stat-label">Outstanding Balances</div>
-          <div className="stat-value">{outstanding}</div>
-          <div className="stat-sub">Players with balance &gt; $0</div>
-        </div>
+        {canSeeFinancials && <>
+          <div className="stat-card sc-green">
+            <div className="stat-icon">$</div>
+            <div className="stat-label">Actual Collected</div>
+            <div className="stat-value">{fmtMoney(collected)}</div>
+            <div className="stat-sub">Update in Budget & Finance</div>
+          </div>
+          <div className="stat-card sc-purple">
+            <div className="stat-icon">▲</div>
+            <div className="stat-label">Projected Income</div>
+            <div className="stat-value">{fmtMoney(projectedIncome)}</div>
+            <div className="stat-sub">If all fees paid in full</div>
+          </div>
+          <div className="stat-card sc-blue">
+            <div className="stat-icon">!</div>
+            <div className="stat-label">Outstanding Balances</div>
+            <div className="stat-value">{outstanding}</div>
+            <div className="stat-sub">Players with balance &gt; $0</div>
+          </div>
+        </>}
       </div>
 
       {/* Team Cards */}
@@ -138,7 +142,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Payment Alerts */}
+        {/* Payment Alerts — finance roles only */}
+        {canSeeFinancials ? (
         <div className="card">
           <div className="card-header">
             <span className="card-title">Payment Alerts</span>
@@ -162,6 +167,22 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+        ) : (
+          <div className="card">
+            <div className="card-header"><span className="card-title">Team Roster Count</span></div>
+            <div className="card-body">
+              {TEAMS.map(team => (
+                <div key={team.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border2)' }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:team.color, width:70 }}>{team.label}</span>
+                  <span style={{ fontFamily:'var(--font-display)', fontSize:22, color:team.color }}>
+                    {onRoster.filter(p=>p.team===team.id).length}
+                  </span>
+                  <span style={{ fontSize:11, color:'var(--text3)' }}>players</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 

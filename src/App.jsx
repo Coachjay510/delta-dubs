@@ -21,8 +21,18 @@ import Admin      from './pages/Admin'
 import FilmRoom   from './pages/FilmRoom'
 
 import { useStore } from './hooks/useStore'
+import { usePermissions } from './hooks/usePermissions'
 
-function LoadingScreen() {
+function RouteGuard({ path, children }) {
+  const { canAccess } = usePermissions()
+  if (!canAccess(path)) return (
+    <div style={{ padding:40, textAlign:'center' }}>
+      <div style={{ fontFamily:'var(--font-display)', fontSize:32, color:'var(--red)', marginBottom:10 }}>ACCESS DENIED</div>
+      <div style={{ fontSize:13, color:'var(--text3)' }}>You don't have permission to view this page.</div>
+    </div>
+  )
+  return children
+}
   return (
     <div style={{
       minHeight: '100vh', background: 'var(--bg)',
@@ -79,16 +89,16 @@ export default function App() {
             <Route path="/players"    element={<Players />} />
             <Route path="/teams"      element={<Teams />} />
             <Route path="/schedule"   element={<Schedule />} />
-            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/attendance" element={<RouteGuard path="/attendance"><Attendance /></RouteGuard>} />
             <Route path="/stats"      element={<Stats />} />
-            <Route path="/payments"   element={<Payments />} />
-            <Route path="/finance"    element={<Finance />} />
-            <Route path="/spending"   element={<Spending />} />
-            <Route path="/history"    element={<History />} />
+            <Route path="/payments"   element={<RouteGuard path="/payments"><Payments /></RouteGuard>} />
+            <Route path="/finance"    element={<RouteGuard path="/finance"><Finance /></RouteGuard>} />
+            <Route path="/spending"   element={<RouteGuard path="/spending"><Spending /></RouteGuard>} />
+            <Route path="/history"    element={<RouteGuard path="/history"><History /></RouteGuard>} />
             <Route path="/college"    element={<College />} />
-            <Route path="/messages"   element={<Messages />} />
-            <Route path="/admin"      element={<Admin />} />
-            <Route path="/filmroom"   element={<FilmRoom />} />
+            <Route path="/messages"   element={<RouteGuard path="/messages"><Messages /></RouteGuard>} />
+            <Route path="/admin"      element={<RouteGuard path="/admin"><Admin /></RouteGuard>} />
+            <Route path="/filmroom"   element={<RouteGuard path="/filmroom"><FilmRoom /></RouteGuard>} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </main>

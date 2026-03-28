@@ -1,39 +1,48 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { useStore } from '../hooks/useStore'
 import { useAuth } from '../hooks/useAuth'
+import { usePermissions } from '../hooks/usePermissions'
 import styles from './Sidebar.module.css'
 
 const NAV = [
   { section: 'Overview' },
-  { to: '/',          icon: '⬡', label: 'Dashboard' },
+  { to: '/',           icon: '⬡', label: 'Dashboard' },
   { section: 'Roster' },
-  { to: '/players',   icon: '○', label: 'Players' },
-  { to: '/teams',     icon: '◈', label: 'Teams' },
+  { to: '/players',    icon: '○', label: 'Players' },
+  { to: '/teams',      icon: '◈', label: 'Teams' },
   { section: 'Operations' },
-  { to: '/schedule',  icon: '◷', label: 'Schedule' },
-  { to: '/attendance',icon: '✓', label: 'Attendance' },
-  { to: '/stats',     icon: '◎', label: 'Stats' },
+  { to: '/schedule',   icon: '◷', label: 'Schedule' },
+  { to: '/attendance', icon: '✓', label: 'Attendance' },
+  { to: '/stats',      icon: '◎', label: 'Stats' },
   { section: 'Admin' },
-  { to: '/payments',  icon: '$', label: 'Payments',  badge: 'pay' },
-  { to: '/finance',   icon: '▲', label: 'Budget & Finance' },
-  { to: '/spending',  icon: '▸', label: 'Spending Tracker' },
-  { to: '/history',   icon: '◫', label: 'Season History' },
-  { to: '/college',   icon: '◉', label: 'College' },
-  { to: '/messages',  icon: '◌', label: 'Messages' },
-  { to: '/admin',     icon: '◆', label: 'Admin Portal' },
-  { to: '/filmroom',  icon: '▶', label: 'Film Room', accent: true },
+  { to: '/payments',   icon: '$', label: 'Payments',  badge: 'pay' },
+  { to: '/finance',    icon: '▲', label: 'Budget & Finance' },
+  { to: '/spending',   icon: '▸', label: 'Spending Tracker' },
+  { to: '/history',    icon: '◫', label: 'Season History' },
+  { to: '/college',    icon: '◉', label: 'College' },
+  { to: '/messages',   icon: '◌', label: 'Messages' },
+  { to: '/admin',      icon: '◆', label: 'Admin Portal' },
+  { to: '/filmroom',   icon: '▶', label: 'Film Room', accent: true },
 ]
 
 export default function Sidebar() {
-  const { players, syncStatus, syncToSupabase, showToast } = useStore()
-  const outstanding = players.filter(p => p.status === 'On Roster' && (p.balance || 0) > 0).length
+  const { players, syncStatus, syncToSupabase } = useStore()
+  const { user, signOut, role, teamAccess }      = useAuth()
+  const { canAccess }                            = usePermissions()
 
-  const { user, signOut } = useAuth()
-  const syncLabel = { local: '💾 Local', syncing: '⏳ Syncing…', synced: '☁️ Synced', error: '❌ Error' }[syncStatus]
+  const outstanding = players.filter(p => p.status === 'On Roster' && (p.balance || 0) > 0).length
+  const syncLabel   = { local: '💾 Local', syncing: '⏳ Syncing…', synced: '☁️ Synced', error: '❌ Error' }[syncStatus]
+
+  const roleColor = {
+    'Head Admin':   '#5cb800',
+    'Coach':        '#3b82f6',
+    'Team Manager': '#ee6730',
+    'Volunteer':    '#8d97b0',
+    'Player':       '#a855f7',
+  }[role] || '#4e576e'
 
   return (
     <aside className={styles.sidebar}>
-      {/* Logo */}
       <div className={styles.logo}>
         <div className={styles.logoMark}>NP</div>
         <div className={styles.logoText}>
@@ -42,19 +51,38 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Org pill */}
       <div className={styles.orgPill}>
         <span className={styles.orgDot} />
         <span className={styles.orgName}>Delta Dubs</span>
         <span className={styles.orgTag}>AAU Org</span>
       </div>
 
-      {/* Nav */}
+      {role && (
+        <div style={{
+          margin: '0 12px 6px',
+          padding: '5px 10px',
+          background: roleColor + '15',
+          border: `1px solid ${roleColor}35`,
+          borderRadius: 'var(--radius-sm)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 7,
+        }}>
+          <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color: roleColor }}>
+            {role}
+          </span>
+          {teamAccess && teamAccess !== 'All Teams' && (
+            <span style={{ fontSize:9, color:'var(--text3)', marginLeft:'auto' }}>{teamAccess}</span>
+          )}
+        </div>
+      )}
+
       <nav className={styles.nav}>
         {NAV.map((item, i) => {
           if (item.section) return (
             <div key={i} className={styles.section}>{item.section}</div>
           )
+          if (!canAccess(item.to)) return null
           return (
             <NavLink
               key={item.to}
@@ -75,7 +103,6 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
       <div className={styles.footer}>
         {user && (
           <div className={styles.userRow}>
@@ -85,9 +112,7 @@ export default function Sidebar() {
             <div className={styles.userEmail}>{user.email}</div>
           </div>
         )}
-        <button className={styles.syncBtn} onClick={syncToSupabase}>
-          {syncLabel}
-        </button>
+        <button className={styles.syncBtn} onClick={syncToSupabase}>{syncLabel}</button>
         <button className={styles.syncBtn} style={{ color:'var(--red)', borderColor:'rgba(239,68,68,.25)' }} onClick={signOut}>
           Sign Out
         </button>

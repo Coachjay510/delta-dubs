@@ -22,6 +22,7 @@ const NAV = [
   { to: '/college',    icon: '◉', label: 'College' },
   { to: '/messages',   icon: '◌', label: 'Messages' },
   { to: '/admin',      icon: '◆', label: 'Admin Portal' },
+  { to: '/staff',      icon: '👥', label: 'Staff' },
   { to: '/filmroom',   icon: '▶', label: 'Film Room', accent: true },
 ]
 

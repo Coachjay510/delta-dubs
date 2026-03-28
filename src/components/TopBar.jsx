@@ -16,6 +16,7 @@ const PAGE_TITLES = {
   '/college':    'College',
   '/messages':   'Messages',
   '/admin':      'Admin Portal',
+  '/staff':      'Staff',
   '/filmroom':   'Film Room',
 }
 

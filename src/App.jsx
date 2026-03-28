@@ -20,6 +20,7 @@ import History    from './pages/History'
 import College    from './pages/College'
 import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
+import Staff      from './pages/Staff'
 import FilmRoom   from './pages/FilmRoom'
 
 function LoadingScreen() {
@@ -99,6 +100,7 @@ export default function App() {
             <Route path="/college"    element={<College />} />
             <Route path="/messages"   element={<RouteGuard path="/messages"><Messages /></RouteGuard>} />
             <Route path="/admin"      element={<RouteGuard path="/admin"><Admin /></RouteGuard>} />
+            <Route path="/staff"      element={<RouteGuard path="/admin"><Staff /></RouteGuard>} />
             <Route path="/filmroom"   element={<RouteGuard path="/filmroom"><FilmRoom /></RouteGuard>} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>

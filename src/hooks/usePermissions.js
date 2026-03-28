@@ -20,6 +20,7 @@ const PAGE_ACCESS = {
   '/college':    ['Player', 'Volunteer', 'Team Manager', 'Coach', 'Head Admin'],
   '/messages':   ['Team Manager', 'Coach', 'Head Admin'],
   '/admin':      ['Head Admin'],
+  '/staff':      ['Head Admin'],
   '/filmroom':   ['Coach', 'Head Admin'],
 }
 

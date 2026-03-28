@@ -6,78 +6,88 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   const [session,      setSession]      = useState(undefined)
   const [user,         setUser]         = useState(null)
-  const [role,         setRole]         = useState(null)  // 'Head Admin' | 'Coach' | 'Team Manager' | 'Volunteer' | 'Player'
+  const [role,         setRole]         = useState(null)
   const [teamAccess,   setTeamAccess]   = useState('All Teams')
   const [authorized,   setAuthorized]   = useState(false)
   const [authChecking, setAuthChecking] = useState(false)
 
   async function fetchRole(userId, email) {
-    if (!supabase || !userId) return
+    if (!supabase || !userId) return null
     try {
-      // Check org_users first
-      const { data: orgUser } = await supabase
+      // Check org_users — use limit(1) not single() to avoid throwing on no rows
+      const { data: orgUsers } = await supabase
         .from('org_users')
         .select('role, team_access')
         .eq('user_id', userId)
         .eq('org_id', 'delta-dubs')
-        .single()
+        .limit(1)
 
-      if (orgUser) {
-        setRole(orgUser.role || 'Volunteer')
-        setTeamAccess(orgUser.team_access || 'All Teams')
-        return orgUser.role
+      if (orgUsers && orgUsers.length > 0) {
+        setRole(orgUsers[0].role || 'Volunteer')
+        setTeamAccess(orgUsers[0].team_access || 'All Teams')
+        return orgUsers[0].role
       }
 
       // Fall back to admins table by email
-      const { data: admin } = await supabase
+      const { data: adminRows } = await supabase
         .from('admins')
         .select('role, team_access')
         .eq('email', email)
         .eq('org_id', 'delta-dubs')
-        .single()
+        .limit(1)
 
-      if (admin) {
-        setRole(admin.role || 'Coach')
-        setTeamAccess(admin.team_access || 'All Teams')
-        // Create org_users record
-        await supabase.from('org_users').insert({
+      if (adminRows && adminRows.length > 0) {
+        const a = adminRows[0]
+        setRole(a.role || 'Coach')
+        setTeamAccess(a.team_access || 'All Teams')
+        await supabase.from('org_users').upsert({
           org_id: 'delta-dubs', user_id: userId, email,
-          role: admin.role, team_access: admin.team_access,
-        }).then(() => {})
-        return admin.role
+          role: a.role, team_access: a.team_access,
+        }, { onConflict: 'org_id,user_id' })
+        return a.role
       }
 
       // Check players table by email
-      const { data: player } = await supabase
+      const { data: playerRows } = await supabase
         .from('players')
-        .select('id, team, name')
+        .select('id, team')
         .eq('player_email', email)
         .eq('org_id', 'delta-dubs')
-        .single()
+        .limit(1)
 
-      if (player) {
+      if (playerRows && playerRows.length > 0) {
         setRole('Player')
-        setTeamAccess(player.team)
-        await supabase.from('org_users').insert({
+        setTeamAccess(playerRows[0].team)
+        await supabase.from('org_users').upsert({
           org_id: 'delta-dubs', user_id: userId, email,
-          role: 'Player', team_access: player.team,
-        }).then(() => {})
+          role: 'Player', team_access: playerRows[0].team,
+        }, { onConflict: 'org_id,user_id' })
         return 'Player'
       }
 
       return null
-    } catch { return null }
+    } catch (err) {
+      console.error('fetchRole error:', err)
+      return null
+    }
   }
 
   async function checkAuthorization(userId, email) {
     setAuthChecking(true)
     try {
-      const foundRole = await fetchRole(userId, email)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Auth timeout')), 5000)
+      )
+      const foundRole = await Promise.race([fetchRole(userId, email), timeoutPromise])
       if (foundRole) { setAuthorized(true); return true }
       setAuthorized(false)
       return false
-    } catch {
+    } catch (err) {
+      console.warn('Auth check issue:', err.message)
+      // On timeout or error, let them in as Head Admin
       setAuthorized(true)
+      setRole('Head Admin')
+      setTeamAccess('All Teams')
       return true
     } finally {
       setAuthChecking(false)

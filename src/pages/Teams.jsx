@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { useStore, TEAMS } from '../hooks/useStore'
 import { useNavigate } from 'react-router-dom'
+import { usePermissions } from '../hooks/usePermissions'
 
 const AV = { Drive:'av-drive', Energy:'av-energy', Passion:'av-passion', Power:'av-power' }
 function initials(name) { return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() }
 
 export default function Teams() {
   const { players } = useStore()
+  const { isPlayer, teamAccess, canSeeFinancials } = usePermissions()
   const navigate = useNavigate()
-  const [active, setActive] = useState('Drive')
+
+  // Players only see their own team
+  const defaultTeam = isPlayer ? teamAccess : 'Drive'
+  const [active, setActive] = useState(defaultTeam)
+  const availableTeams = isPlayer ? TEAMS.filter(t => t.id === teamAccess) : TEAMS
 
   const team     = TEAMS.find(t => t.id === active)
   const roster   = players.filter(p => p.team === active && p.status === 'On Roster')
@@ -27,9 +33,9 @@ export default function Teams() {
   return (
     <div style={{ padding: 24 }}>
 
-      {/* Team tabs */}
+      {/* Team tabs — players only see their team */}
       <div style={{ display:'flex', gap:8, marginBottom:20, flexWrap:'wrap' }}>
-        {TEAMS.map(t => (
+        {availableTeams.map(t => (
           <button key={t.id} onClick={() => setActive(t.id)} style={{
             padding: '8px 20px',
             borderRadius: 'var(--radius-sm)',
@@ -69,9 +75,11 @@ export default function Teams() {
         </div>
         {[
           ['Players', roster.length, team.color],
-          ['Collected', fmtMoney(collected), 'var(--np-green2)'],
-          ['Projected', fmtMoney(projected), 'var(--text2)'],
-          ['Outstanding', fmtMoney(projected - collected), 'var(--red)'],
+          ...(canSeeFinancials ? [
+            ['Collected', fmtMoney(collected), 'var(--np-green2)'],
+            ['Projected', fmtMoney(projected), 'var(--text2)'],
+            ['Outstanding', fmtMoney(projected - collected), 'var(--red)'],
+          ] : []),
         ].map(([lbl, val, color]) => (
           <div key={lbl} style={{ borderLeft:'1px solid var(--border2)', paddingLeft:20 }}>
             <div style={{ fontSize:9, textTransform:'uppercase', letterSpacing:2, color:'var(--text3)', fontWeight:700, marginBottom:4 }}>{lbl}</div>
@@ -93,7 +101,10 @@ export default function Teams() {
             <thead>
               <tr>
                 <th>Player</th><th>#</th><th>Age / Group</th>
-                <th>Grad Year</th><th>Parent</th><th>Phone</th><th>Payment</th>
+                <th>Grad Year</th>
+                {!isPlayer && <th>Parent</th>}
+                {!isPlayer && <th>Phone</th>}
+                {canSeeFinancials && <th>Payment</th>}
               </tr>
             </thead>
             <tbody>
@@ -116,9 +127,9 @@ export default function Teams() {
                   <td className="td-mono" style={{ color:'var(--text3)' }}>#{p.num||'—'}</td>
                   <td className="td-muted">{[p.age, p.ageGroup].filter(Boolean).join(' / ')||'—'}</td>
                   <td className="td-muted">{p.year||'—'}</td>
-                  <td style={{ fontSize:12 }}>{p.parent||'—'}</td>
-                  <td className="td-mono" style={{ fontSize:11 }}>{p.phone||'—'}</td>
-                  <td>{payBadge(p)}</td>
+                  {!isPlayer && <td style={{ fontSize:12 }}>{p.parent||'—'}</td>}
+                  {!isPlayer && <td className="td-mono" style={{ fontSize:11 }}>{p.phone||'—'}</td>}
+                  {canSeeFinancials && <td>{payBadge(p)}</td>}
                 </tr>
               ))}
             </tbody>

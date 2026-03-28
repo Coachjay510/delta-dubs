@@ -1,0 +1,61 @@
+.topbar {
+  height: var(--topbar-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.left { display: flex; flex-direction: column; gap: 1px; }
+
+.title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--np-green2);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.syncInfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.syncDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.local   { background: var(--text3); }
+.syncing { background: var(--yellow); animation: blink 1s ease-in-out infinite; }
+.synced  { background: var(--np-green2); }
+.error   { background: var(--red); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.syncLabel {
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-mono);
+}

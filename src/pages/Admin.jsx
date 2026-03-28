@@ -5,17 +5,54 @@ const BLANK = { fname:'', lname:'', email:'', role:'Coach', team:'All Teams', ph
 const ROLES  = ['Head Admin','Coach','Team Manager','Volunteer']
 const TEAMS_OPT = ['All Teams','Drive','Energy','Passion','Power']
 
+const API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002'
+
+async function callEmail(endpoint, body) {
+  try {
+    const res = await fetch(`${API}/api/email/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    return res.ok
+  } catch { return false }
+}
+
 export default function Admin() {
-  const { admins, addAdmin, removeAdmin } = useStore()
-  const [showModal, setShowModal] = useState(false)
-  const [form, setForm]           = useState(BLANK)
+  const { admins, addAdmin, removeAdmin, showToast } = useStore()
+  const [showModal, setShowModal]   = useState(false)
+  const [form, setForm]             = useState(BLANK)
+  const [sendingReset, setSendingReset] = useState(null)
+  const [sendEmail, setSendEmail]   = useState(true)
 
   function setF(k,v) { setForm(f=>({...f,[k]:v})) }
-  function save() {
+
+  async function save() {
     if (!form.fname || !form.email) return
     addAdmin({ ...form, name: `${form.fname} ${form.lname}`.trim() })
     setShowModal(false)
+
+    // Send admin created email
+    if (sendEmail) {
+      const ok = await callEmail('admin-created', {
+        adminName:  `${form.fname} ${form.lname}`.trim(),
+        adminEmail: form.email,
+        role:       form.role,
+        teamAccess: form.team,
+        orgName:    'Delta Dubs',
+      })
+      showToast(ok ? '✅ Admin added & email sent!' : '✅ Admin added (email failed — check backend)')
+    } else {
+      showToast('✅ Admin added!')
+    }
     setForm(BLANK)
+  }
+
+  async function sendPasswordReset(email) {
+    setSendingReset(email)
+    const ok = await callEmail('password-reset', { email, orgName: 'Delta Dubs' })
+    setSendingReset(null)
+    showToast(ok ? `📧 Password reset sent to ${email}` : '❌ Failed to send reset — check backend')
   }
 
   const roleColor = { 'Head Admin':'green', 'Coach':'blue', 'Team Manager':'orange', 'Volunteer':'gray' }
@@ -47,7 +84,7 @@ export default function Admin() {
       </div>
 
       {/* Admin list */}
-      <div className="card">
+      <div className="card" style={{ marginBottom: 18 }}>
         <div className="card-header">
           <span className="card-title">Admins & Staff — {admins.length}</span>
         </div>
@@ -74,16 +111,26 @@ export default function Admin() {
               <div style={{ fontSize:11, color:'var(--text3)' }}>{a.email}</div>
             </div>
             <span className={`badge badge-${roleColor[a.role]||'gray'}`}>{a.role}</span>
-            <span className="badge badge-gray">{a.team}</span>
+            <span className="badge badge-gray">{a.team || a.team_access}</span>
             {a.phone && <span style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text3)' }}>{a.phone}</span>}
+            {a.email && (
+              <button
+                className="btn-ghost btn-sm"
+                style={{ color:'var(--blue)', borderColor:'rgba(59,130,246,.3)', fontSize:11 }}
+                disabled={sendingReset === a.email}
+                onClick={() => sendPasswordReset(a.email)}
+              >
+                {sendingReset === a.email ? '…' : '🔑 Reset'}
+              </button>
+            )}
             <button className="btn-ghost btn-sm" style={{ color:'var(--red)', borderColor:'rgba(239,68,68,.3)' }}
               onClick={()=>removeAdmin(a.id)}>✕</button>
           </div>
         ))}
       </div>
 
-      {/* Settings section */}
-      <div className="card" style={{ marginTop:18 }}>
+      {/* Settings */}
+      <div className="card">
         <div className="card-header"><span className="card-title">Organization Settings</span></div>
         <div className="card-body">
           <div className="grid-2" style={{ gap:16 }}>
@@ -123,8 +170,8 @@ export default function Admin() {
                   <input className="form-input" placeholder="Last" value={form.lname} onChange={e=>setF('lname',e.target.value)} />
                 </div>
                 <div className="form-group full">
-                  <label className="form-label">Email</label>
-                  <input className="form-input" type="email" placeholder="admin@email.com" value={form.email} onChange={e=>setF('email',e.target.value)} />
+                  <label className="form-label">Email (must match their Google account)</label>
+                  <input className="form-input" type="email" placeholder="coach@gmail.com" value={form.email} onChange={e=>setF('email',e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Role</label>
@@ -141,6 +188,12 @@ export default function Admin() {
                 <div className="form-group full">
                   <label className="form-label">Phone</label>
                   <input className="form-input" type="tel" placeholder="(925) 555-0100" value={form.phone} onChange={e=>setF('phone',e.target.value)} />
+                </div>
+                <div className="form-group full">
+                  <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:13, color:'var(--text2)' }}>
+                    <input type="checkbox" checked={sendEmail} onChange={e=>setSendEmail(e.target.checked)} />
+                    Send welcome email to this admin
+                  </label>
                 </div>
               </div>
             </div>

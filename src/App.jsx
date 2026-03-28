@@ -38,11 +38,29 @@ function LoadingScreen() {
 }
 
 export default function App() {
-  const { session, loading: authLoading } = useAuth()
+  const { session, loading, authorized, signOut } = useAuth()
   const { loading: dataLoading } = useStore()
 
-  if (authLoading || dataLoading) return <LoadingScreen />
+  if (loading || dataLoading) return <LoadingScreen />
   if (!session) return <Login />
+
+  if (!authorized) return (
+    <div style={{
+      minHeight: '100vh', background: 'var(--bg)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center',
+    }}>
+      <div style={{ fontFamily:'var(--font-display)', fontSize:42, color:'var(--red)', letterSpacing:2 }}>ACCESS DENIED</div>
+      <div style={{ fontSize:14, color:'var(--text3)', maxWidth:400, lineHeight:1.7 }}>
+        Your Google account is not authorized to access Delta Dubs management.
+        Contact your admin to get access.
+      </div>
+      <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text3)', marginBottom:8 }}>
+        Signed in as: {session.user?.email}
+      </div>
+      <button className="btn btn-secondary" onClick={signOut}>Sign Out</button>
+    </div>
+  )
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>

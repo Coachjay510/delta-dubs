@@ -21,6 +21,7 @@ import College    from './pages/College'
 import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
 import Staff      from './pages/Staff'
+import PlayerPortal from './pages/PlayerPortal'
 import FilmRoom   from './pages/FilmRoom'
 
 function LoadingScreen() {
@@ -50,7 +51,7 @@ function RouteGuard({ path, children }) {
 }
 
 export default function App() {
-  const { session, loading, authorized, signOut } = useAuth()
+  const { session, loading, authorized, signOut, role } = useAuth()
   const { loading: dataLoading } = useStore()
 
   if (loading || dataLoading) return <LoadingScreen />
@@ -87,7 +88,7 @@ export default function App() {
         <TopBar />
         <main style={{ flex: 1 }}>
           <Routes>
-            <Route path="/"           element={<Dashboard />} />
+            <Route path="/"           element={role === 'Player' ? <PlayerPortal /> : <Dashboard />} />
             <Route path="/players"    element={<Players />} />
             <Route path="/teams"      element={<Teams />} />
             <Route path="/schedule"   element={<Schedule />} />
@@ -101,7 +102,7 @@ export default function App() {
             <Route path="/messages"   element={<RouteGuard path="/messages"><Messages /></RouteGuard>} />
             <Route path="/admin"      element={<RouteGuard path="/admin"><Admin /></RouteGuard>} />
             <Route path="/staff"      element={<RouteGuard path="/admin"><Staff /></RouteGuard>} />
-            <Route path="/filmroom"   element={<RouteGuard path="/filmroom"><FilmRoom /></RouteGuard>} />
+            <Route path="/portal"     element={<PlayerPortal />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </main>

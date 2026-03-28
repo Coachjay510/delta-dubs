@@ -84,9 +84,9 @@ export function AuthProvider({ children }) {
       return false
     } catch (err) {
       console.warn('Auth check issue:', err.message)
-      // On timeout or error, let them in as Head Admin
+      // On timeout or error default to most restrictive role
       setAuthorized(true)
-      setRole('Head Admin')
+      setRole('Volunteer')
       setTeamAccess('All Teams')
       return true
     } finally {

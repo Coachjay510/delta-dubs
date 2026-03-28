@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Toast from './components/Toast'
+import MobileNav from './components/MobileNav'
 import { useAuth } from './hooks/useAuth'
 import { useStore } from './hooks/useStore'
 import { usePermissions } from './hooks/usePermissions'
@@ -20,9 +21,10 @@ import History    from './pages/History'
 import College    from './pages/College'
 import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
-import Staff      from './pages/Staff'
+import Staff       from './pages/Staff'
 import PlayerPortal from './pages/PlayerPortal'
-import FilmRoom   from './pages/FilmRoom'
+import SuperAdmin  from './pages/SuperAdmin'
+import FilmRoom    from './pages/FilmRoom'
 
 function LoadingScreen() {
   return (
@@ -103,11 +105,13 @@ export default function App() {
             <Route path="/admin"      element={<RouteGuard path="/admin"><Admin /></RouteGuard>} />
             <Route path="/staff"      element={<RouteGuard path="/admin"><Staff /></RouteGuard>} />
             <Route path="/portal"     element={<PlayerPortal />} />
+            <Route path="/superadmin" element={<SuperAdmin />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
       <Toast />
+      <MobileNav />
     </div>
   )
 }

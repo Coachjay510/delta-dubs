@@ -3,7 +3,58 @@ import { useStore } from '../hooks/useStore'
 import { useAuth } from '../hooks/useAuth'
 
 const ROLES = ['Head Admin', 'Coach', 'Team Manager', 'Volunteer']
-const TEAMS_OPT = ['All Teams', 'Drive', 'Energy', 'Passion', 'Power']
+const TEAMS_OPT = ['Drive', 'Energy', 'Passion', 'Power']
+const TEAM_COLORS = { Drive:'#3b82f6', Energy:'#ee6730', Passion:'#a855f7', Power:'#4ade80' }
+
+function parseTeams(teamAccess) {
+  if (!teamAccess || teamAccess === 'All Teams') return []
+  return teamAccess.split(',').map(t => t.trim()).filter(Boolean)
+}
+
+function formatTeams(selected) {
+  if (selected.length === 0 || selected.length === TEAMS_OPT.length) return 'All Teams'
+  return selected.join(', ')
+}
+
+function TeamCheckboxes({ value, onChange }) {
+  const selected = parseTeams(value)
+  const allSelected = selected.length === 0 || selected.length === TEAMS_OPT.length
+
+  function toggle(team) {
+    const cur = allSelected ? [...TEAMS_OPT] : [...selected]
+    const next = cur.includes(team) ? cur.filter(t => t !== team) : [...cur, team]
+    onChange(formatTeams(next))
+  }
+
+  function toggleAll() {
+    onChange(allSelected ? '' : 'All Teams')
+  }
+
+  return (
+    <div>
+      <label style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', marginBottom:6, fontSize:12 }}>
+        <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+        <span style={{ fontWeight:600, color:'var(--text2)' }}>All Teams</span>
+      </label>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+        {TEAMS_OPT.map(team => {
+          const checked = allSelected || selected.includes(team)
+          const tc = TEAM_COLORS[team]
+          return (
+            <label key={team} style={{ display:'flex', alignItems:'center', gap:5, cursor:'pointer',
+              padding:'4px 10px', borderRadius:20, fontSize:11, fontWeight:600,
+              background: checked ? tc+'18' : 'var(--bg3)',
+              border: `1px solid ${checked ? tc+'60' : 'var(--border2)'}`,
+              color: checked ? tc : 'var(--text3)', transition:'all .15s' }}>
+              <input type="checkbox" checked={checked} onChange={() => toggle(team)} style={{ display:'none' }} />
+              {team}
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 const roleColor = {
   'Head Admin':   { bg: 'rgba(92,184,0,0.12)',    color: '#3b7a00',       border: 'rgba(92,184,0,0.3)' },
@@ -203,12 +254,9 @@ export default function Staff() {
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                       </div>
-                      <div>
-                        <div className="form-label" style={{ marginBottom:3 }}>Team</div>
-                        <select className="filter-select" style={{ fontSize:12 }}
-                          value={editForm.team} onChange={e => setEditForm(f => ({ ...f, team: e.target.value }))}>
-                          {TEAMS_OPT.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
+                      <div style={{ minWidth:200 }}>
+                        <div className="form-label" style={{ marginBottom:3 }}>Team Access</div>
+                        <TeamCheckboxes value={editForm.team} onChange={v => setEditForm(f => ({ ...f, team: v }))} />
                       </div>
                       <div style={{ display:'flex', gap:6, marginTop:16 }}>
                         <button className="btn btn-primary btn-sm" onClick={() => saveEdit(a)}>Save</button>
@@ -272,11 +320,9 @@ export default function Staff() {
                     {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div className="form-group">
+                <div className="form-group full">
                   <label className="form-label">Team Access</label>
-                  <select className="form-select" value={addForm.team} onChange={e => setAddForm(f=>({...f,team:e.target.value}))}>
-                    {TEAMS_OPT.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <TeamCheckboxes value={addForm.team} onChange={v => setAddForm(f=>({...f,team:v}))} />
                 </div>
                 <div className="form-group full">
                   <label className="form-label">Phone</label>

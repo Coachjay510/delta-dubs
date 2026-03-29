@@ -2,279 +2,374 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 
-const SUPER_ADMIN_EMAILS = [
-  'nextplaysports.ca@gmail.com',
-]
+const SUPER_ADMINS = ['nextplaysports.ca@gmail.com']
 
-const STATUS_COLOR = {
-  active:    { bg: 'rgba(92,184,0,0.12)',   color: '#3b7a00',  border: 'rgba(92,184,0,0.3)' },
-  trial:     { bg: 'rgba(234,179,8,0.12)',  color: '#a16207',  border: 'rgba(234,179,8,0.3)' },
-  suspended: { bg: 'rgba(239,68,68,0.12)',  color: '#dc2626',  border: 'rgba(239,68,68,0.3)' },
-  inactive:  { bg: 'rgba(141,151,176,0.1)', color: '#4e576e',  border: 'rgba(141,151,176,0.2)' },
+const API = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3002'
+
+const STATUS_COLORS = {
+  active:    { bg:'rgba(92,184,0,0.12)',   color:'#3b7a00',  border:'rgba(92,184,0,0.3)' },
+  trial:     { bg:'rgba(234,179,8,0.12)',  color:'#a16207',  border:'rgba(234,179,8,0.3)' },
+  suspended: { bg:'rgba(239,68,68,0.12)',  color:'#dc2626',  border:'rgba(239,68,68,0.3)' },
+  inactive:  { bg:'rgba(141,151,176,0.1)', color:'#4e576e',  border:'rgba(141,151,176,0.2)' },
 }
 
-const TIER_COLOR = {
+const TIER_COLORS = {
   Starter: '#5cb800',
   Pro:     '#3b82f6',
   Elite:   '#a855f7',
 }
 
+const TIER_PRICES = { Starter: 49, Pro: 99, Elite: 199 }
+
+function Badge({ label, color, bg, border }) {
+  return (
+    <span style={{
+      padding:'2px 10px', borderRadius:20, fontSize:10, fontWeight:700,
+      background: bg, color, border:`1px solid ${border}`,
+      textTransform:'uppercase', letterSpacing:1,
+    }}>{label}</span>
+  )
+}
+
 export default function SuperAdmin() {
   const { user } = useAuth()
-  const [orgs,        setOrgs]        = useState([])
-  const [users,       setUsers]       = useState([])
+  const [tab, setTab]               = useState('overview')
+  const [orgs, setOrgs]             = useState([])
+  const [orgUsers, setOrgUsers]     = useState([])
   const [playerCounts, setPlayerCounts] = useState({})
-  const [loading,     setLoading]     = useState(true)
-  const [activeOrg,   setActiveOrg]   = useState(null)
-  const [tab,         setTab]         = useState('orgs') // orgs | users | activity
+  const [superAdmins, setSuperAdmins] = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [expandedOrg, setExpandedOrg] = useState(null)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showSuperAdminModal, setShowSuperAdminModal] = useState(false)
+  const [inviteForm, setInviteForm] = useState({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
+  const [newSuperEmail, setNewSuperEmail] = useState('')
+  const [saving, setSaving]         = useState(false)
+  const [emailTarget, setEmailTarget] = useState(null)
+  const [emailBody, setEmailBody]   = useState('')
+  const [emailSubject, setEmailSubject] = useState('')
+  const [sendingEmail, setSendingEmail] = useState(false)
 
-  const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(user?.email)
+  const isSuperAdmin = SUPER_ADMINS.includes(user?.email)
 
   useEffect(() => { if (isSuperAdmin) fetchAll() }, [isSuperAdmin])
 
   async function fetchAll() {
     setLoading(true)
     try {
-      const [{ data: orgData }, { data: orgUsers }, { data: playerData }] = await Promise.all([
+      const [{ data: orgData }, { data: users }, { data: players }, { data: admData }] = await Promise.all([
         supabase.from('orgs').select('*').order('created_at', { ascending: false }),
         supabase.from('org_users').select('*').order('created_at', { ascending: false }),
         supabase.from('players').select('org_id, status'),
+        supabase.from('admins').select('*').eq('org_id', 'np-platform').limit(50),
       ])
       setOrgs(orgData || [])
-      setUsers(orgUsers || [])
-      // Count players per org
+      setOrgUsers(users || [])
+      setSuperAdmins(admData || [])
       const counts = {}
-      ;(playerData || []).forEach(p => {
-        if (!counts[p.org_id]) counts[p.org_id] = { total: 0, onRoster: 0 }
+      ;(players || []).forEach(p => {
+        if (!counts[p.org_id]) counts[p.org_id] = { total:0, onRoster:0 }
         counts[p.org_id].total++
         if (p.status === 'On Roster') counts[p.org_id].onRoster++
       })
       setPlayerCounts(counts)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
-  async function updateOrgStatus(orgId, status) {
-    await supabase.from('orgs').update({ status }).eq('id', orgId)
-    setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, status } : o))
+  async function updateOrg(orgId, updates) {
+    await supabase.from('orgs').update(updates).eq('id', orgId)
+    setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, ...updates } : o))
   }
 
-  async function updateOrgTier(orgId, tier) {
-    await supabase.from('orgs').update({ tier }).eq('id', orgId)
-    setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, tier } : o))
+  async function inviteOrg() {
+    if (!inviteForm.orgName || !inviteForm.adminEmail) return
+    setSaving(true)
+    try {
+      const orgId = inviteForm.orgId || inviteForm.orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      // Create org
+      await supabase.from('orgs').insert({
+        id: orgId, name: inviteForm.orgName,
+        ein: inviteForm.ein, tier: inviteForm.tier, status: 'trial',
+      })
+      // Create admin record
+      await supabase.from('admins').insert({
+        org_id: orgId, fname: inviteForm.adminName.split(' ')[0],
+        lname: inviteForm.adminName.split(' ').slice(1).join(' '),
+        email: inviteForm.adminEmail, role: 'Head Admin', team_access: 'All Teams',
+      })
+      // Send welcome email
+      await fetch(`${API}/api/email/welcome`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminName: inviteForm.adminName, orgName: inviteForm.orgName, email: inviteForm.adminEmail }),
+      })
+      await fetchAll()
+      setShowInviteModal(false)
+      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
+    } catch (err) { console.error(err) }
+    finally { setSaving(false) }
+  }
+
+  async function sendOrgEmail() {
+    if (!emailTarget || !emailSubject || !emailBody) return
+    setSendingEmail(true)
+    const orgAdmins = orgUsers.filter(u => u.org_id === emailTarget.id)
+    await Promise.all(orgAdmins.map(a =>
+      fetch(`${API}/api/email/admin-created`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminEmail: a.email, adminName: a.email, role: 'Admin', orgName: emailTarget.name }),
+      })
+    ))
+    setSendingEmail(false)
+    setEmailTarget(null)
+    setEmailSubject('')
+    setEmailBody('')
+  }
+
+  async function addSuperAdmin() {
+    if (!newSuperEmail) return
+    await supabase.from('admins').insert({
+      org_id: 'np-platform', fname: 'Super', lname: 'Admin',
+      email: newSuperEmail, role: 'Head Admin', team_access: 'All Teams',
+    })
+    setNewSuperEmail('')
+    fetchAll()
   }
 
   if (!isSuperAdmin) return (
     <div style={{ padding:40, textAlign:'center' }}>
       <div style={{ fontFamily:'var(--font-display)', fontSize:32, color:'var(--red)', marginBottom:10 }}>RESTRICTED</div>
-      <div style={{ fontSize:13, color:'var(--text3)' }}>This area is for Next Play platform administrators only.</div>
+      <div style={{ fontSize:13, color:'var(--text3)' }}>Next Play platform administrators only.</div>
     </div>
   )
 
-  const totalPlayers = Object.values(playerCounts).reduce((s, c) => s + c.total, 0)
-  const totalAdmins  = users.length
-  const activeOrgs   = orgs.filter(o => o.status === 'active' || !o.status).length
+  const mrr = orgs.filter(o => o.status === 'active').reduce((s, o) => s + (TIER_PRICES[o.tier||'Starter']||49), 0)
+  const activeOrgs = orgs.filter(o => !o.status || o.status === 'active').length
+  const trialOrgs  = orgs.filter(o => o.status === 'trial').length
+  const totalPlayers = Object.values(playerCounts).reduce((s,c) => s + c.onRoster, 0)
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—'
+  const TABS = [
+    { id:'overview', label:'Overview' },
+    { id:'orgs',     label:`Orgs (${orgs.length})` },
+    { id:'users',    label:`Users (${orgUsers.length})` },
+    { id:'superadmins', label:'Super Admins' },
+  ]
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding:24 }}>
 
-      {/* NP Super Admin Banner */}
+      {/* Platform banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.06))',
-        border: '1px solid rgba(168,85,247,0.3)',
-        borderRadius: 'var(--radius)',
-        padding: '16px 22px',
-        marginBottom: 24,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 14,
+        background:'linear-gradient(135deg,rgba(168,85,247,0.12),rgba(168,85,247,0.06))',
+        border:'1px solid rgba(168,85,247,0.3)', borderRadius:'var(--radius)',
+        padding:'16px 22px', marginBottom:24,
+        display:'flex', alignItems:'center', gap:14, flexWrap:'wrap',
       }}>
         <div style={{ fontSize:24 }}>🏢</div>
-        <div>
+        <div style={{ flex:1 }}>
           <div style={{ fontFamily:'var(--font-display)', fontSize:18, color:'#a855f7', letterSpacing:.5 }}>
-            NEXT PLAY — PLATFORM ADMIN
+            NEXT PLAY — PLATFORM CONTROL CENTER
           </div>
-          <div style={{ fontSize:12, color:'var(--text3)', marginTop:1 }}>
-            Signed in as {user?.email} · Full platform access
-          </div>
+          <div style={{ fontSize:12, color:'var(--text3)', marginTop:1 }}>{user?.email}</div>
         </div>
-        <button className="btn btn-secondary btn-sm" style={{ marginLeft:'auto' }} onClick={fetchAll}>
-          🔄 Refresh
-        </button>
-      </div>
-
-      {/* Platform KPIs */}
-      <div className="grid-4" style={{ marginBottom: 24 }}>
-        <div className="stat-card sc-purple">
-          <div className="stat-label">Total Orgs</div>
-          <div className="stat-value">{orgs.length}</div>
-          <div className="stat-sub">{activeOrgs} active</div>
-        </div>
-        <div className="stat-card sc-green">
-          <div className="stat-label">Total Players</div>
-          <div className="stat-value">{totalPlayers}</div>
-          <div className="stat-sub">Across all orgs</div>
-        </div>
-        <div className="stat-card sc-blue">
-          <div className="stat-label">Total Admins</div>
-          <div className="stat-value">{totalAdmins}</div>
-          <div className="stat-sub">Platform users</div>
-        </div>
-        <div className="stat-card sc-orange">
-          <div className="stat-label">MRR</div>
-          <div className="stat-value">$0</div>
-          <div className="stat-sub">Add Stripe to track</div>
+        <div style={{ display:'flex', gap:8 }}>
+          <button className="btn btn-secondary btn-sm" onClick={fetchAll}>🔄 Refresh</button>
+          <button className="btn btn-primary btn-sm" onClick={() => setShowInviteModal(true)}>+ Invite Org</button>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'1px solid var(--border2)' }}>
-        {[['orgs','Organizations'], ['users','Platform Users'], ['activity','Activity']].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} style={{
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding:'10px 20px', background:'none', border:'none',
-            borderBottom: tab===id ? '2px solid #a855f7' : '2px solid transparent',
-            color: tab===id ? '#a855f7' : 'var(--text3)',
+            borderBottom: tab===t.id ? '2px solid #a855f7' : '2px solid transparent',
+            color: tab===t.id ? '#a855f7' : 'var(--text3)',
             fontFamily:'var(--font-body)', fontSize:13, fontWeight:600,
             cursor:'pointer', transition:'all .15s', marginBottom:-1,
-          }}>{label}</button>
+          }}>{t.label}</button>
         ))}
       </div>
 
-      {loading && (
-        <div style={{ textAlign:'center', padding:40, color:'var(--text3)', fontSize:13 }}>Loading platform data…</div>
+      {loading && <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>Loading…</div>}
+
+      {/* ── OVERVIEW TAB ── */}
+      {!loading && tab === 'overview' && (
+        <div>
+          <div className="grid-4" style={{ marginBottom:24 }}>
+            {[
+              ['MRR', `$${mrr.toLocaleString()}`, 'sc-purple', 'Monthly recurring'],
+              ['Active Orgs', activeOrgs, 'sc-green', `${trialOrgs} on trial`],
+              ['Total Players', totalPlayers, 'sc-blue', 'On roster across all orgs'],
+              ['Platform Users', orgUsers.length, 'sc-orange', 'Admins + coaches'],
+            ].map(([label, val, cls, sub]) => (
+              <div key={label} className={`stat-card ${cls}`}>
+                <div className="stat-label">{label}</div>
+                <div className="stat-value">{val}</div>
+                <div className="stat-sub">{sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tier breakdown */}
+          <div className="grid-2" style={{ gap:18, marginBottom:18 }}>
+            <div className="card">
+              <div className="card-header"><span className="card-title">Orgs by Tier</span></div>
+              <div className="card-body">
+                {['Starter','Pro','Elite'].map(tier => {
+                  const count = orgs.filter(o => (o.tier||'Starter') === tier).length
+                  const tc = TIER_COLORS[tier]
+                  const revenue = count * TIER_PRICES[tier]
+                  return (
+                    <div key={tier} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                      <span style={{ fontFamily:'var(--font-display)', fontSize:16, color:tc, width:60 }}>{tier}</span>
+                      <div style={{ flex:1, height:6, background:'var(--bg4)', borderRadius:3, overflow:'hidden' }}>
+                        <div style={{ width:`${orgs.length ? (count/orgs.length*100) : 0}%`, height:'100%', background:tc, borderRadius:3 }} />
+                      </div>
+                      <span style={{ fontFamily:'var(--font-mono)', fontSize:12, color:'var(--text3)', width:16, textAlign:'center' }}>{count}</span>
+                      <span style={{ fontFamily:'var(--font-mono)', fontSize:12, color:tc, width:60, textAlign:'right' }}>
+                        ${revenue.toLocaleString()}/mo
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-header"><span className="card-title">Orgs by Status</span></div>
+              <div className="card-body">
+                {['active','trial','suspended','inactive'].map(status => {
+                  const count = orgs.filter(o => (o.status||'active') === status).length
+                  const sc = STATUS_COLORS[status]
+                  return (
+                    <div key={status} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                      <Badge label={status} {...sc} />
+                      <div style={{ flex:1, height:6, background:'var(--bg4)', borderRadius:3, overflow:'hidden' }}>
+                        <div style={{ width:`${orgs.length ? (count/orgs.length*100) : 0}%`, height:'100%', background:sc.color, borderRadius:3 }} />
+                      </div>
+                      <span style={{ fontFamily:'var(--font-mono)', fontSize:12, color:'var(--text3)' }}>{count}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Orgs tab */}
+      {/* ── ORGS TAB ── */}
       {!loading && tab === 'orgs' && (
         <div>
           {orgs.map(org => {
             const pc = playerCounts[org.id] || { total:0, onRoster:0 }
-            const orgUsers = users.filter(u => u.org_id === org.id)
+            const members = orgUsers.filter(u => u.org_id === org.id)
             const status = org.status || 'active'
-            const tier = org.tier || 'Starter'
-            const sc = STATUS_COLOR[status] || STATUS_COLOR.active
-            const tc = TIER_COLOR[tier] || '#5cb800'
-            const isExpanded = activeOrg === org.id
+            const tier   = org.tier   || 'Starter'
+            const sc = STATUS_COLORS[status] || STATUS_COLORS.active
+            const tc = TIER_COLORS[tier] || '#5cb800'
+            const isExpanded = expandedOrg === org.id
 
             return (
               <div key={org.id} className="card" style={{ marginBottom:12 }}>
-                <div style={{
-                  display:'flex', alignItems:'center', gap:14, padding:'16px 20px',
-                  cursor:'pointer',
-                }} onClick={() => setActiveOrg(isExpanded ? null : org.id)}>
-
-                  {/* Org avatar */}
+                <div style={{ display:'flex', alignItems:'center', gap:14, padding:'16px 20px', cursor:'pointer' }}
+                  onClick={() => setExpandedOrg(isExpanded ? null : org.id)}>
                   <div style={{
                     width:44, height:44, borderRadius:10, flexShrink:0,
-                    background: 'linear-gradient(135deg,var(--np-green),var(--orange))',
+                    background:'linear-gradient(135deg,var(--np-green),var(--orange))',
                     display:'flex', alignItems:'center', justifyContent:'center',
                     fontFamily:'var(--font-display)', fontSize:18, color:'#fff',
-                  }}>
-                    {(org.name||'O')[0]}
-                  </div>
-
+                  }}>{(org.name||'O')[0]}</div>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontFamily:'var(--font-display)', fontSize:18, letterSpacing:.5 }}>{org.name}</div>
+                    <div style={{ fontFamily:'var(--font-display)', fontSize:18 }}>{org.name}</div>
                     <div style={{ fontSize:11, color:'var(--text3)', marginTop:2, fontFamily:'var(--font-mono)' }}>
-                      {org.id} · EIN: {org.ein || '—'} · Created {fmtDate(org.created_at)}
+                      {org.id} · Created {fmtDate(org.created_at)}
                     </div>
                   </div>
-
-                  {/* Stats */}
                   <div style={{ display:'flex', gap:20, alignItems:'center' }}>
                     <div style={{ textAlign:'center' }}>
                       <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:'var(--np-green2)' }}>{pc.onRoster}</div>
                       <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>Players</div>
                     </div>
                     <div style={{ textAlign:'center' }}>
-                      <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:'var(--blue)' }}>{orgUsers.length}</div>
+                      <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:'var(--blue)' }}>{members.length}</div>
                       <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>Admins</div>
                     </div>
+                    <div style={{ textAlign:'center' }}>
+                      <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:tc }}>${TIER_PRICES[tier]}</div>
+                      <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>/mo</div>
+                    </div>
                   </div>
-
-                  {/* Tier */}
-                  <span style={{
-                    padding:'3px 12px', borderRadius:20, fontSize:10, fontWeight:700,
-                    background: tc + '20', color: tc, border: `1px solid ${tc}40`,
-                    textTransform:'uppercase', letterSpacing:1,
-                  }}>{tier}</span>
-
-                  {/* Status */}
-                  <span style={{
-                    padding:'3px 10px', borderRadius:20, fontSize:10, fontWeight:700,
-                    background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`,
-                    textTransform:'uppercase', letterSpacing:1,
-                  }}>{status}</span>
-
-                  <span style={{ color:'var(--text3)', fontSize:16 }}>{isExpanded ? '▲' : '▼'}</span>
+                  <Badge label={tier} bg={tc+'20'} color={tc} border={tc+'40'} />
+                  <Badge label={status} {...sc} />
+                  <span style={{ color:'var(--text3)' }}>{isExpanded ? '▲' : '▼'}</span>
                 </div>
 
-                {/* Expanded org detail */}
                 {isExpanded && (
-                  <div style={{ borderTop:'1px solid var(--border2)', padding:'16px 20px' }}>
-                    <div className="grid-2" style={{ gap:20, marginBottom:16 }}>
-                      {/* Org settings */}
+                  <div style={{ borderTop:'1px solid var(--border2)', padding:'20px' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:20 }}>
+
+                      {/* Controls */}
                       <div>
-                        <div className="section-title" style={{ fontSize:12, marginBottom:12 }}>Org Controls</div>
-                        <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:12 }}>
-                          <div>
-                            <div className="form-label" style={{ marginBottom:4 }}>Status</div>
-                            <select className="filter-select" style={{ fontSize:12 }}
-                              value={status}
-                              onChange={e => updateOrgStatus(org.id, e.target.value)}>
-                              <option value="active">Active</option>
-                              <option value="trial">Trial</option>
-                              <option value="suspended">Suspended</option>
-                              <option value="inactive">Inactive</option>
-                            </select>
-                          </div>
+                        <div className="section-title" style={{ fontSize:12 }}>Controls</div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                           <div>
                             <div className="form-label" style={{ marginBottom:4 }}>Tier</div>
-                            <select className="filter-select" style={{ fontSize:12 }}
-                              value={tier}
-                              onChange={e => updateOrgTier(org.id, e.target.value)}>
-                              <option value="Starter">Starter</option>
-                              <option value="Pro">Pro</option>
-                              <option value="Elite">Elite</option>
+                            <select className="filter-select" style={{ width:'100%', fontSize:12 }}
+                              value={tier} onChange={e => updateOrg(org.id, { tier: e.target.value })}>
+                              {['Starter','Pro','Elite'].map(t => <option key={t} value={t}>{t} — ${TIER_PRICES[t]}/mo</option>)}
                             </select>
                           </div>
-                        </div>
-                        <div style={{ display:'flex', gap:8 }}>
-                          <button className="btn btn-secondary btn-sm">📧 Email Org</button>
-                          <button className="btn btn-secondary btn-sm" style={{ color:'var(--red)', borderColor:'rgba(239,68,68,.3)' }}>
-                            ⏸ Suspend
-                          </button>
+                          <div>
+                            <div className="form-label" style={{ marginBottom:4 }}>Status</div>
+                            <select className="filter-select" style={{ width:'100%', fontSize:12 }}
+                              value={status} onChange={e => updateOrg(org.id, { status: e.target.value })}>
+                              {['active','trial','suspended','inactive'].map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                            <button className="btn btn-secondary btn-sm" onClick={() => {
+                              setEmailTarget(org)
+                              setEmailSubject(`Message from Next Play — ${org.name}`)
+                            }}>📧 Email Org</button>
+                            <button className="btn btn-secondary btn-sm"
+                              onClick={() => window.open(`${window.location.origin}?impersonate=${org.id}`, '_blank')}>
+                              👁 View as Org
+                            </button>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Org users */}
+                      {/* Org details */}
                       <div>
-                        <div className="section-title" style={{ fontSize:12, marginBottom:12 }}>
-                          Admins ({orgUsers.length})
-                        </div>
-                        <div style={{ maxHeight:160, overflowY:'auto' }}>
-                          {orgUsers.map(u => (
-                            <div key={u.id} style={{
-                              display:'flex', alignItems:'center', gap:8,
-                              padding:'6px 0', borderBottom:'1px solid var(--border2)',
-                            }}>
+                        <div className="section-title" style={{ fontSize:12 }}>Details</div>
+                        {[['EIN', org.ein],['Season', org.season],['Website', org.website]].filter(([,v])=>v).map(([l,v])=>(
+                          <div key={l} style={{ marginBottom:8 }}>
+                            <div style={{ fontSize:9, textTransform:'uppercase', letterSpacing:1, color:'var(--text3)', fontWeight:700, marginBottom:2 }}>{l}</div>
+                            <div style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text2)' }}>{v}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Admins */}
+                      <div>
+                        <div className="section-title" style={{ fontSize:12 }}>Admins ({members.length})</div>
+                        <div style={{ maxHeight:150, overflowY:'auto' }}>
+                          {members.map(u => (
+                            <div key={u.id} style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', borderBottom:'1px solid var(--border2)' }}>
                               <div style={{
-                                width:28, height:28, borderRadius:'50%',
-                                background:'var(--bg4)', border:'1px solid var(--border2)',
+                                width:26, height:26, borderRadius:'50%', background:'var(--bg4)',
                                 display:'flex', alignItems:'center', justifyContent:'center',
-                                fontSize:11, fontFamily:'var(--font-display)', color:'var(--text3)',
+                                fontSize:11, fontFamily:'var(--font-display)', color:'var(--text3)', flexShrink:0,
                               }}>{(u.email||'?')[0].toUpperCase()}</div>
                               <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ fontSize:12, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
+                                <div style={{ fontSize:11, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{u.email}</div>
                                 <div style={{ fontSize:10, color:'var(--text3)' }}>{u.role}</div>
                               </div>
                             </div>
                           ))}
+                          {members.length === 0 && <div style={{ fontSize:12, color:'var(--text3)' }}>No admins yet</div>}
                         </div>
                       </div>
                     </div>
@@ -283,26 +378,31 @@ export default function SuperAdmin() {
               </div>
             )
           })}
+          {orgs.length === 0 && (
+            <div className="card">
+              <div style={{ padding:40, textAlign:'center', color:'var(--text3)', fontSize:13 }}>
+                No orgs yet — invite your first org above
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Users tab */}
+      {/* ── USERS TAB ── */}
       {!loading && tab === 'users' && (
         <div className="card">
           <div className="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Email</th><th>Org</th><th>Role</th><th>Team</th><th>Joined</th>
-                </tr>
+                <tr><th>Email</th><th>Org</th><th>Role</th><th>Team</th><th>Joined</th></tr>
               </thead>
               <tbody>
-                {users.map(u => (
+                {orgUsers.map(u => (
                   <tr key={u.id}>
                     <td style={{ fontSize:13 }}>{u.email}</td>
                     <td><span className="badge badge-gray">{u.org_id}</span></td>
                     <td><span className="badge badge-blue">{u.role}</span></td>
-                    <td style={{ fontSize:12, color:'var(--text3)' }}>{u.team_access || 'All Teams'}</td>
+                    <td style={{ fontSize:12, color:'var(--text3)' }}>{u.team_access||'All Teams'}</td>
                     <td className="td-muted">{fmtDate(u.created_at)}</td>
                   </tr>
                 ))}
@@ -312,12 +412,169 @@ export default function SuperAdmin() {
         </div>
       )}
 
-      {/* Activity tab */}
-      {!loading && tab === 'activity' && (
-        <div className="card">
-          <div style={{ padding:32, textAlign:'center', color:'var(--text3)', fontSize:13 }}>
-            <div style={{ fontSize:24, marginBottom:10 }}>📊</div>
-            Activity logging coming soon — wire Stripe webhooks and event tracking here.
+      {/* ── SUPER ADMINS TAB ── */}
+      {!loading && tab === 'superadmins' && (
+        <div>
+          <div className="card" style={{ marginBottom:16 }}>
+            <div className="card-header">
+              <span className="card-title">Platform Super Admins</span>
+              <button className="btn btn-primary btn-sm" onClick={() => setShowSuperAdminModal(true)}>+ Add Super Admin</button>
+            </div>
+            <div style={{ padding:'0 18px' }}>
+              {/* Always show current user */}
+              {SUPER_ADMINS.map(email => (
+                <div key={email} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border2)' }}>
+                  <div style={{
+                    width:36, height:36, borderRadius:'50%',
+                    background:'linear-gradient(135deg,#a855f7,#5cb800)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:'var(--font-display)', fontSize:14, color:'#fff',
+                  }}>{email[0].toUpperCase()}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:600 }}>{email}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>Platform Owner</div>
+                  </div>
+                  <span className="badge badge-purple">Super Admin</span>
+                  {email === user?.email && <span className="badge badge-green">You</span>}
+                </div>
+              ))}
+              {superAdmins.map(a => (
+                <div key={a.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border2)' }}>
+                  <div style={{
+                    width:36, height:36, borderRadius:'50%',
+                    background:'linear-gradient(135deg,#a855f7,#3b82f6)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:'var(--font-display)', fontSize:14, color:'#fff',
+                  }}>{(a.fname||'?')[0]}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:600 }}>{a.fname} {a.lname}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{a.email}</div>
+                  </div>
+                  <span className="badge badge-purple">Super Admin</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ padding:'12px 18px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:'var(--radius)', fontSize:12, color:'var(--text3)' }}>
+            ⚠️ Super admins have full platform access. Add only trusted Next Play team members.
+          </div>
+        </div>
+      )}
+
+      {/* ── INVITE ORG MODAL ── */}
+      {showInviteModal && (
+        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setShowInviteModal(false)}>
+          <div className="modal" style={{ width:580 }}>
+            <div className="modal-header">
+              <div className="modal-title">🏢 Invite New Organization</div>
+              <button className="modal-close" onClick={() => setShowInviteModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-grid">
+                <div className="form-group full">
+                  <label className="form-label">Organization Name</label>
+                  <input className="form-input" placeholder="Bay Area Elite Basketball"
+                    value={inviteForm.orgName} onChange={e => setInviteForm(f=>({...f,orgName:e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Org ID (auto-generated)</label>
+                  <input className="form-input" placeholder="bay-area-elite"
+                    value={inviteForm.orgId || inviteForm.orgName.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}
+                    onChange={e => setInviteForm(f=>({...f,orgId:e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">EIN (optional)</label>
+                  <input className="form-input" placeholder="XX-XXXXXXX"
+                    value={inviteForm.ein} onChange={e => setInviteForm(f=>({...f,ein:e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Admin Name</label>
+                  <input className="form-input" placeholder="First Last"
+                    value={inviteForm.adminName} onChange={e => setInviteForm(f=>({...f,adminName:e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Admin Email</label>
+                  <input className="form-input" type="email" placeholder="admin@orgemail.com"
+                    value={inviteForm.adminEmail} onChange={e => setInviteForm(f=>({...f,adminEmail:e.target.value}))} />
+                </div>
+                <div className="form-group full">
+                  <label className="form-label">Subscription Tier</label>
+                  <select className="form-select" value={inviteForm.tier} onChange={e => setInviteForm(f=>({...f,tier:e.target.value}))}>
+                    <option value="Starter">Starter — $49/mo</option>
+                    <option value="Pro">Pro — $99/mo</option>
+                    <option value="Elite">Elite — $199/mo</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ marginTop:14, padding:'12px 14px', background:'var(--np-green-dim)', border:'1px solid var(--np-green-mid)', borderRadius:'var(--radius-sm)', fontSize:12, color:'var(--text2)' }}>
+                ✅ This will create the org, add the admin, and send them a welcome email with login instructions.
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowInviteModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={inviteOrg} disabled={saving}>
+                {saving ? 'Creating…' : '🏢 Create Org & Send Invite'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── ADD SUPER ADMIN MODAL ── */}
+      {showSuperAdminModal && (
+        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setShowSuperAdminModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <div className="modal-title">🔐 Add Super Admin</div>
+              <button className="modal-close" onClick={() => setShowSuperAdminModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input className="form-input" type="email" placeholder="team@nextplaysports.com"
+                  value={newSuperEmail} onChange={e => setNewSuperEmail(e.target.value)} />
+              </div>
+              <div style={{ marginTop:12, fontSize:12, color:'var(--text3)', lineHeight:1.6 }}>
+                ⚠️ Super admins have full access to all orgs, all data, and all platform controls.
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowSuperAdminModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={() => { addSuperAdmin(); setShowSuperAdminModal(false) }}>Add Super Admin</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EMAIL ORG MODAL ── */}
+      {emailTarget && (
+        <div className="modal-overlay" onClick={e => e.target===e.currentTarget && setEmailTarget(null)}>
+          <div className="modal">
+            <div className="modal-header">
+              <div className="modal-title">📧 Email — {emailTarget.name}</div>
+              <button className="modal-close" onClick={() => setEmailTarget(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group" style={{ marginBottom:12 }}>
+                <label className="form-label">Subject</label>
+                <input className="form-input" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Message</label>
+                <textarea className="form-textarea" style={{ minHeight:120 }} value={emailBody}
+                  onChange={e => setEmailBody(e.target.value)} placeholder="Write your message to this org's admins…" />
+              </div>
+              <div style={{ marginTop:10, fontSize:12, color:'var(--text3)' }}>
+                Sends to {orgUsers.filter(u=>u.org_id===emailTarget.id).length} admin(s) in this org.
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setEmailTarget(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={sendOrgEmail} disabled={sendingEmail}>
+                {sendingEmail ? 'Sending…' : '📧 Send Email'}
+              </button>
+            </div>
           </div>
         </div>
       )}

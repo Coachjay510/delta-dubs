@@ -10,6 +10,17 @@ export function AuthProvider({ children }) {
   const [teamAccess,   setTeamAccess]   = useState('All Teams')
   const [authorized,   setAuthorized]   = useState(false)
   const [authChecking, setAuthChecking] = useState(false)
+  const [orgId,        setOrgId]        = useState('delta-dubs')
+  const [orgData,      setOrgData]      = useState(null)
+
+  async function fetchOrgData(id) {
+    const { data } = await supabase
+      .from('orgs')
+      .select('id, status, tier, trial_started_at, name')
+      .eq('id', id)
+      .single()
+    if (data) setOrgData(data)
+  }
 
   async function fetchRole(userId, email) {
     if (!supabase || !userId) return null
@@ -23,8 +34,11 @@ export function AuthProvider({ children }) {
         .limit(1)
 
       if (orgUsers && orgUsers.length > 0) {
+        const oid = orgUsers[0].org_id || 'delta-dubs'
         setRole(orgUsers[0].role || 'Volunteer')
         setTeamAccess(orgUsers[0].team_access || 'All Teams')
+        setOrgId(oid)
+        fetchOrgData(oid)
         return orgUsers[0].role
       }
 
@@ -135,6 +149,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       session, user, role, teamAccess, authorized, authChecking,
+      orgId, orgData,
       signInWithGoogle, signOut,
       loading: session === undefined || authChecking,
     }}>

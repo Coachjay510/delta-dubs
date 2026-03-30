@@ -91,6 +91,7 @@ export default function SuperAdmin() {
       await supabase.from('orgs').insert({
         id: orgId, name: inviteForm.orgName,
         ein: inviteForm.ein, tier: inviteForm.tier, status: 'trial',
+        trial_started_at: new Date().toISOString(),
       })
       // Create admin record
       await supabase.from('admins').insert({

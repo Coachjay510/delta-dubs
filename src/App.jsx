@@ -3,9 +3,12 @@ import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Toast from './components/Toast'
 import MobileNav from './components/MobileNav'
+import TrialBanner from './components/TrialBanner'
+import PaywallScreen from './components/PaywallScreen'
 import { useAuth } from './hooks/useAuth'
 import { useStore } from './hooks/useStore'
 import { usePermissions } from './hooks/usePermissions'
+import { useTrial } from './hooks/useTrial'
 
 import Login      from './pages/Login'
 import Dashboard  from './pages/Dashboard'
@@ -53,8 +56,9 @@ function RouteGuard({ path, children }) {
 }
 
 export default function App() {
-  const { session, loading, authorized, signOut, role } = useAuth()
+  const { session, loading, authorized, signOut, role, orgId, orgData } = useAuth()
   const { loading: dataLoading } = useStore()
+  const trial = useTrial(orgId)
 
   if (loading || dataLoading) return <LoadingScreen />
   if (!session) return <Login />
@@ -77,6 +81,27 @@ export default function App() {
     </div>
   )
 
+  // Super admins bypass trial checks
+  const isSuperAdmin = session.user?.email === 'nextplaysports.ca@gmail.com'
+
+  // Paywall — trial expired and not paid (skip for super admin)
+  if (!isSuperAdmin && !trial.loading && trial.isTrialExpired && !trial.isPaid) {
+    return (
+      <div style={{ display:'flex', minHeight:'100vh', width:'100%' }}>
+        <Sidebar />
+        <div style={{ marginLeft:'var(--sidebar-w)', flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
+          <PaywallScreen
+            orgName={orgData?.name}
+            onSelectPlan={(planId) => {
+              // TODO: redirect to Stripe checkout when billing is wired
+              alert(`Stripe billing coming soon! You selected: ${planId}`)
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       <Sidebar />
@@ -87,6 +112,13 @@ export default function App() {
         flexDirection: 'column',
         minHeight: '100vh',
       }}>
+        {/* Trial banner — shows when in trial and not yet paid */}
+        {!isSuperAdmin && trial.showBanner && (
+          <TrialBanner
+            daysLeft={trial.trialDaysLeft}
+            onUpgrade={() => alert('Stripe billing coming soon!')}
+          />
+        )}
         <TopBar />
         <main style={{ flex: 1 }}>
           <Routes>

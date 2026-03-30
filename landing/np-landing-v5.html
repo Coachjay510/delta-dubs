@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Next Play Sports Media & Management</title>
+<meta name="description" content="The all-in-one platform built for AAU basketball organizations. Manage rosters, payments, schedules, film, and recruiting — all in one place." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --green:      #5cb800;
+  --green2:     #7ae600;
+  --green3:     #a8f040;
+  --green-dim:  rgba(92,184,0,0.10);
+  --green-mid:  rgba(92,184,0,0.22);
+  --green-glow: rgba(92,184,0,0.30);
+  --bg:         #04060a;
+  --bg2:        #080c12;
+  --bg3:        #0e1420;
+  --border:     #1a2030;
+  --border2:    #242c3e;
+  --text:       #f0f4ff;
+  --text2:      #8896b0;
+  --text3:      #3d4d66;
+  --orange:     #f06030;
+  --purple:     #a855f7;
+  --font-d:     'Anton', sans-serif;
+  --font-b:     'DM Sans', sans-serif;
+  --font-m:     'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font-b); background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+#sline { position:fixed; top:0; left:0; height:2px; z-index:9999; background:linear-gradient(90deg,var(--green),var(--green2)); transition:width .1s; }
+
+/* NAV */
+nav { position:fixed; top:0; left:0; right:0; z-index:100; height:72px; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(20px,5vw,64px); background:rgba(4,6,10,0.92); border-bottom:1px solid rgba(255,255,255,0.05); backdrop-filter:blur(16px); }
+.nav-logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
+.nav-logo-icon { height:44px; width:auto; mix-blend-mode:screen; }
+.nav-logo-text { height:28px; width:auto; mix-blend-mode:screen; }
+.nav-links { display:flex; gap:32px; list-style:none; }
+.nav-links a { font-size:13px; font-weight:500; color:var(--text2); text-decoration:none; transition:color .2s; }
+.nav-links a:hover { color:var(--green2); }
+.nav-cta { display:inline-flex; align-items:center; gap:6px; padding:9px 22px; background:var(--green); color:#000; font-weight:800; font-size:13px; text-decoration:none; border-radius:4px; transition:all .2s; font-family:var(--font-b); }
+.nav-cta:hover { background:var(--green2); box-shadow:0 0 28px var(--green-glow); }
+
+/* HERO */
+.hero { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:72px clamp(20px,5vw,64px) 80px; position:relative; overflow:hidden; }
+.hero-bg { position:absolute; inset:0; z-index:0; }
+.hero-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(92,184,0,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(92,184,0,.025) 1px,transparent 1px); background-size:60px 60px; }
+.hero-glow { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); width:900px; height:600px; background:radial-gradient(ellipse,rgba(92,184,0,.08) 0%,transparent 65%); pointer-events:none; }
+.hero-vignette { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%,transparent 20%,rgba(4,6,10,.9) 100%); }
+.hero-inner { position:relative; z-index:1; max-width:900px; animation:fadeUp .8s ease both; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+.hero-kicker { display:inline-flex; align-items:center; gap:8px; font-family:var(--font-m); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--green2); margin-bottom:24px; animation:fadeUp .6s ease both; }
+.kicker-dot { width:6px; height:6px; border-radius:50%; background:var(--green2); animation:blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+.hero-h1 { font-family:var(--font-d); font-size:clamp(52px,9vw,120px); line-height:.88; letter-spacing:2px; margin-bottom:24px; animation:fadeUp .7s .1s ease both; }
+.hero-h1 .outline { -webkit-text-stroke:2px rgba(255,255,255,.5); color:transparent; }
+.hero-h1 .green { color:var(--green2); }
+
+.hero-sub { font-size:clamp(16px,2vw,20px); color:var(--text2); line-height:1.65; max-width:620px; margin:0 auto 40px; animation:fadeUp .7s .2s ease both; }
+.hero-sub strong { color:var(--text); font-weight:600; }
+
+.hero-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; animation:fadeUp .7s .3s ease both; }
+
+.btn-primary { display:inline-flex; align-items:center; gap:8px; padding:15px 36px; background:var(--green); color:#000; font-family:var(--font-b); font-weight:800; font-size:15px; text-decoration:none; border-radius:4px; letter-spacing:.3px; transition:all .2s; }
+.btn-primary:hover { background:var(--green2); box-shadow:0 0 40px var(--green-glow); transform:translateY(-2px); }
+.btn-secondary { display:inline-flex; align-items:center; gap:8px; padding:15px 32px; border:1px solid var(--border2); color:var(--text2); font-family:var(--font-b); font-weight:600; font-size:15px; text-decoration:none; border-radius:4px; transition:all .2s; }
+.btn-secondary:hover { border-color:var(--green2); color:var(--green2); }
+
+.hero-trial { margin-top:20px; font-family:var(--font-m); font-size:10px; letter-spacing:2px; color:var(--text3); animation:fadeUp .7s .4s ease both; }
+.hero-trial span { color:var(--green2); }
+
+/* MARQUEE */
+.marquee-wrap { background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border); overflow:hidden; padding:3px 0; }
+.marquee-track { display:flex; gap:0; animation:marquee 40s linear infinite; width:max-content; }
+.marquee-item { display:flex; align-items:center; gap:10px; padding:12px 36px; border-right:1px solid var(--border); white-space:nowrap; }
+.marquee-icon { font-size:16px; }
+.marquee-label { font-size:13px; font-weight:600; color:var(--text2); }
+@keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* SECTIONS */
+section { padding:clamp(60px,8vw,120px) clamp(20px,5vw,64px); }
+.section-inner { max-width:1160px; margin:0 auto; }
+.section-kicker { font-family:var(--font-m); font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--green2); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.section-kicker::before { content:'//'; color:var(--green); opacity:.6; }
+.section-h2 { font-family:var(--font-d); font-size:clamp(40px,6vw,80px); line-height:.9; letter-spacing:1px; margin-bottom:16px; }
+.section-sub { font-size:17px; color:var(--text2); line-height:1.7; max-width:520px; }
+
+/* LOGO STRIP */
+.logo-strip { background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border); padding:40px clamp(20px,5vw,64px); }
+.logo-strip-inner { max-width:1160px; margin:0 auto; }
+.logo-strip-label { font-family:var(--font-m); font-size:9px; letter-spacing:3px; color:var(--text3); text-transform:uppercase; text-align:center; margin-bottom:32px; }
+.logo-strip-logos { display:flex; align-items:center; justify-content:center; gap:clamp(32px,6vw,80px); flex-wrap:wrap; }
+.logo-item { display:flex; flex-direction:column; align-items:center; gap:10px; opacity:.6; transition:opacity .2s; }
+.logo-item:hover { opacity:1; }
+.logo-item img { height:48px; width:auto; filter:brightness(0) invert(1); }
+.logo-item-name { font-family:var(--font-m); font-size:9px; letter-spacing:2px; color:var(--text3); text-transform:uppercase; }
+.logo-np-mark { font-family:var(--font-d); font-size:36px; color:var(--green2); letter-spacing:2px; line-height:1; }
+.logo-np-sub { font-family:var(--font-m); font-size:8px; letter-spacing:2px; color:var(--text3); text-transform:uppercase; }
+
+/* FEATURES GRID */
+.features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:2px; margin-top:56px; border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.feat-card { background:var(--bg2); padding:36px 32px; position:relative; transition:background .2s; cursor:default; }
+.feat-card:hover { background:var(--bg3); }
+.feat-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--green-mid),transparent); transform:scaleX(0); transition:transform .4s; }
+.feat-card:hover::after { transform:scaleX(1); }
+.feat-icon { font-size:32px; margin-bottom:16px; display:block; }
+.feat-title { font-family:var(--font-d); font-size:22px; letter-spacing:.5px; margin-bottom:10px; }
+.feat-desc { font-size:14px; color:var(--text2); line-height:1.7; }
+.feat-tag { display:inline-block; margin-top:14px; font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--green2); padding:3px 10px; background:var(--green-dim); border:1px solid var(--green-mid); border-radius:20px; }
+.feat-tag.live { color:#22c55e; background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); }
+.feat-tag.purple { color:var(--purple); background:rgba(168,85,247,.1); border-color:rgba(168,85,247,.3); }
+
+/* FILM ROOM SCREENSHOT */
+.filmroom-screenshot-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border2);
+  box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(92,184,0,.1);
+}
+.filmroom-screenshot-wrap img {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+}
+.filmroom-screenshot-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(92,184,0,.15);
+  pointer-events: none;
+}
+.filmroom-section { background:var(--bg2); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+.filmroom-inner { max-width:1160px; margin:0 auto; }
+.filmroom-layout { display:grid; grid-template-columns:1fr 1fr; gap:64px; align-items:center; }
+@media (max-width:900px) { .filmroom-layout { grid-template-columns:1fr; } }
+
+
+
+.filmroom-features { }
+.filmroom-features h3 { font-family:var(--font-d); font-size:clamp(32px,4vw,52px); line-height:.9; margin-bottom:16px; }
+.filmroom-badge { display:inline-flex; align-items:center; gap:6px; font-family:var(--font-m); font-size:9px; letter-spacing:2px; color:#22c55e; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); padding:4px 12px; border-radius:20px; margin-bottom:20px; }
+.filmroom-list { list-style:none; margin:24px 0; }
+.filmroom-list li { padding:10px 0; border-bottom:1px solid var(--border); font-size:14px; color:var(--text2); display:flex; gap:12px; align-items:flex-start; }
+.filmroom-list li::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green2); flex-shrink:0; margin-top:5px; }
+.filmroom-addon { margin-top:20px; background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.25); border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.filmroom-addon-price { font-family:var(--font-d); font-size:22px; color:var(--purple); white-space:nowrap; }
+.filmroom-addon-label { font-size:13px; color:var(--text2); }
+.filmroom-addon-label strong { color:var(--text); }
+
+/* HOW IT WORKS */
+.steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0; margin-top:56px; position:relative; }
+.steps::before { content:''; position:absolute; top:28px; left:8%; right:8%; height:1px; background:linear-gradient(90deg,transparent,var(--green-mid),var(--green-mid),transparent); }
+.step { text-align:center; padding:0 20px; }
+.step-num { width:56px; height:56px; border-radius:50%; background:var(--bg2); border:1px solid var(--green-mid); display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-family:var(--font-d); font-size:22px; color:var(--green2); position:relative; z-index:1; }
+.step-title { font-family:var(--font-d); font-size:20px; margin-bottom:10px; }
+.step-desc { font-size:14px; color:var(--text2); line-height:1.6; }
+
+/* PRICING */
+.tiers-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:56px; }
+.tier-card { background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:32px 28px; position:relative; overflow:hidden; transition:transform .2s; display:flex; flex-direction:column; }
+.tier-card:hover { transform:translateY(-4px); }
+.tier-card.featured { border-color:var(--green-mid); background:linear-gradient(135deg,rgba(92,184,0,.06),var(--bg2)); }
+.tier-card.featured::before { content:'MOST POPULAR'; position:absolute; top:16px; right:16px; font-family:var(--font-m); font-size:8px; font-weight:700; letter-spacing:2px; color:var(--green2); background:var(--green-dim); border:1px solid var(--green-mid); padding:3px 8px; border-radius:10px; }
+.tier-name { font-family:var(--font-d); font-size:24px; letter-spacing:1px; margin-bottom:4px; }
+.tier-price { font-family:var(--font-d); font-size:48px; line-height:1; margin-bottom:2px; }
+.tier-period { font-size:13px; color:var(--text3); margin-bottom:6px; }
+.tier-savings { font-size:11px; color:var(--green2); font-family:var(--font-m); letter-spacing:1px; text-transform:uppercase; margin-bottom:20px; }
+.tier-features { list-style:none; margin-bottom:28px; flex:1; }
+.tier-features li { font-size:13px; color:var(--text2); padding:7px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.tier-features li::before { content:'✓'; color:var(--green2); font-weight:800; font-size:12px; flex-shrink:0; }
+.tier-btn { display:block; text-align:center; padding:12px; border-radius:6px; font-family:var(--font-b); font-weight:700; font-size:14px; text-decoration:none; transition:all .2s; cursor:pointer; border:none; }
+.tier-btn-outline { border:1px solid var(--border2); color:var(--text2); background:transparent; }
+.tier-btn-outline:hover { border-color:var(--green2); color:var(--green2); }
+.tier-btn-solid { background:var(--green); color:#000; }
+.tier-btn-solid:hover { background:var(--green2); box-shadow:0 0 28px var(--green-glow); }
+
+.filmroom-tier { margin-top:24px; background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.2); border-radius:10px; padding:16px 20px; display:flex; align-items:center; gap:16px; max-width:900px; margin-left:auto; margin-right:auto; }
+.filmroom-tier-price { font-family:var(--font-d); font-size:28px; color:var(--purple); white-space:nowrap; }
+.filmroom-tier-info { flex:1; }
+.filmroom-tier-info strong { font-size:14px; color:var(--text); display:block; margin-bottom:2px; }
+.filmroom-tier-info span { font-size:13px; color:var(--text2); }
+.filmroom-tier-btn { padding:10px 20px; background:transparent; border:1px solid rgba(168,85,247,.4); color:var(--purple); border-radius:6px; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap; transition:all .2s; }
+.filmroom-tier-btn:hover { background:rgba(168,85,247,.15); }
+
+/* CTA */
+.cta-section { background:linear-gradient(135deg,rgba(92,184,0,.07),transparent); border:1px solid var(--green-mid); border-radius:16px; padding:clamp(40px,6vw,80px) clamp(24px,5vw,80px); text-align:center; position:relative; overflow:hidden; }
+.cta-section::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:600px; height:300px; background:radial-gradient(ellipse,rgba(92,184,0,.1) 0%,transparent 70%); pointer-events:none; }
+.cta-h2 { font-family:var(--font-d); font-size:clamp(36px,6vw,72px); line-height:.9; margin-bottom:20px; position:relative; z-index:1; }
+.cta-sub { font-size:17px; color:var(--text2); line-height:1.7; max-width:480px; margin:0 auto 36px; position:relative; z-index:1; }
+.cta-btn { display:inline-flex; align-items:center; gap:10px; padding:16px 40px; background:var(--green); color:#000; font-family:var(--font-b); font-weight:800; font-size:16px; text-decoration:none; border-radius:4px; transition:all .2s; position:relative; z-index:1; cursor:pointer; border:none; }
+.cta-btn:hover { background:var(--green2); box-shadow:0 0 48px var(--green-glow); transform:translateY(-2px); }
+.cta-note { margin-top:16px; font-family:var(--font-m); font-size:11px; color:var(--text3); letter-spacing:1px; position:relative; z-index:1; }
+.cta-note a { color:var(--text3); text-decoration:none; }
+.cta-note a:hover { color:var(--green2); }
+
+/* FOOTER */
+footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+.footer-logo { display:flex; align-items:center; gap:10px; }
+.footer-mark { font-family:var(--font-d); font-size:20px; letter-spacing:3px; color:var(--green2); }
+.footer-name { font-family:var(--font-m); font-size:9px; letter-spacing:2px; color:var(--text3); text-transform:uppercase; }
+.footer-copy { font-size:12px; color:var(--text3); }
+.footer-links { display:flex; gap:20px; }
+.footer-links a { font-size:12px; color:var(--text3); text-decoration:none; transition:color .2s; }
+.footer-links a:hover { color:var(--green2); }
+
+/* REVEAL */
+.reveal { opacity:0; transform:translateY(28px); transition:opacity .6s ease,transform .6s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* MOBILE */
+@media (max-width:768px) {
+  .nav-links { display:none; }
+  .steps::before { display:none; }
+  .hero-h1 { font-size:clamp(42px,12vw,72px); }
+  .filmroom-layout { gap:40px; }
+}
+</style>
+</head>
+<body>
+
+<div id="sline"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <img src="NP_Logo_abrev.png" alt="NP" class="nav-logo-icon" />
+    <img src="NP_Font.png" alt="Next Play Sports Media" class="nav-logo-text" />
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#filmroom">Film Room</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <a href="#pricing" class="nav-cta">Start Free Trial →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-grid"></div>
+    <div class="hero-glow"></div>
+    <div class="hero-vignette"></div>
+  </div>
+  <div class="hero-inner">
+    <img src="NP_Logo_abrev.png" alt="NP" style="height:90px;width:auto;mix-blend-mode:screen;margin-bottom:24px;animation:fadeUp .6s ease both;" />
+    <div class="hero-kicker">
+      <span class="kicker-dot"></span>
+      Built by a coach · Used by AAU programs
+    </div>
+    <h1 class="hero-h1">
+      RUN YOUR<br>
+      <span class="outline">AAU ORG</span><br>
+      <span class="green">DIFFERENTLY</span>
+    </h1>
+    <p class="hero-sub">
+      <strong>Next Play Sports Media & Management</strong> is the all-in-one platform built exclusively for AAU and high school basketball — roster, payments, film room, stats, and recruiting in one place.
+    </p>
+    <div class="hero-btns">
+      <a href="#pricing" class="btn-primary">Start 14-Day Free Trial →</a>
+      <a href="#filmroom" class="btn-secondary">See the Film Room</a>
+    </div>
+    <div class="hero-trial">
+      <span>14 days free</span> · No credit card required · Cancel anytime
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="marquee-icon">👥</span><span class="marquee-label">Roster Management</span></div>
+    <div class="marquee-item"><span class="marquee-icon">💰</span><span class="marquee-label">Payment Tracking</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎬</span><span class="marquee-label">Film Room</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📅</span><span class="marquee-label">Schedule & Attendance</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📊</span><span class="marquee-label">Stats & Analytics</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎓</span><span class="marquee-label">College Recruiting</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🔐</span><span class="marquee-label">Role-Based Access</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📱</span><span class="marquee-label">Player Portal</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎬</span><span class="marquee-label">Dual-Camera Sync</span></div>
+    <div class="marquee-item"><span class="marquee-icon">☁️</span><span class="marquee-label">Cloud Sync</span></div>
+    <div class="marquee-item"><span class="marquee-icon">👥</span><span class="marquee-label">Roster Management</span></div>
+    <div class="marquee-item"><span class="marquee-icon">💰</span><span class="marquee-label">Payment Tracking</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎬</span><span class="marquee-label">Film Room</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📅</span><span class="marquee-label">Schedule & Attendance</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📊</span><span class="marquee-label">Stats & Analytics</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎓</span><span class="marquee-label">College Recruiting</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🔐</span><span class="marquee-label">Role-Based Access</span></div>
+    <div class="marquee-item"><span class="marquee-icon">📱</span><span class="marquee-label">Player Portal</span></div>
+    <div class="marquee-item"><span class="marquee-icon">🎬</span><span class="marquee-label">Dual-Camera Sync</span></div>
+    <div class="marquee-item"><span class="marquee-icon">☁️</span><span class="marquee-label">Cloud Sync</span></div>
+  </div>
+</div>
+
+<!-- LOGO STRIP -->
+<div class="logo-strip">
+  <div class="logo-strip-inner">
+    <div class="logo-strip-label">Powering AAU organizations</div>
+    <div class="logo-strip-logos">
+      <div class="logo-item">
+        <img src="NP_Main.png" alt="Next Play Sports Media" style="height:64px;width:auto;mix-blend-mode:screen;" />
+      </div>
+      <div style="width:1px;height:48px;background:var(--border);flex-shrink:0;"></div>
+      <div class="logo-item">
+        <div style="font-family:var(--font-d);font-size:20px;color:rgba(255,255,255,.5);letter-spacing:3px;">DELTA DUBS</div>
+        <div class="logo-np-sub">AAU Basketball · Antioch, CA</div>
+      </div>
+      <div class="logo-item">
+        <div style="font-family:var(--font-d);font-size:18px;color:rgba(59,130,246,.6);letter-spacing:3px;">DRIVE</div>
+        <div class="logo-np-sub">15U</div>
+      </div>
+      <div class="logo-item">
+        <div style="font-family:var(--font-d);font-size:18px;color:rgba(238,103,48,.6);letter-spacing:3px;">ENERGY</div>
+        <div class="logo-np-sub">14U</div>
+      </div>
+      <div class="logo-item">
+        <div style="font-family:var(--font-d);font-size:18px;color:rgba(168,85,247,.6);letter-spacing:3px;">PASSION</div>
+        <div class="logo-np-sub">13U</div>
+      </div>
+      <div class="logo-item">
+        <div style="font-family:var(--font-d);font-size:18px;color:rgba(74,222,128,.6);letter-spacing:3px;">POWER</div>
+        <div class="logo-np-sub">12U</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-kicker">Platform Features</div>
+      <h2 class="section-h2">EVERYTHING<br>YOUR ORG<br>NEEDS</h2>
+      <p class="section-sub">Built by a coach who runs an AAU org. Not another generic sports app.</p>
+    </div>
+    <div class="features-grid reveal">
+      <div class="feat-card">
+        <span class="feat-icon">👥</span>
+        <div class="feat-title">Roster Management</div>
+        <div class="feat-desc">Full player profiles with contact info, jersey sizes, age groups, and status tracking across multiple teams. Drive, Energy, Passion, Power and beyond.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">💰</span>
+        <div class="feat-title">Payment Tracking</div>
+        <div class="feat-desc">Track deposits, balances, and payment history per player. Log payments by method — cash, Venmo, Zelle, check. Instant alerts for outstanding balances.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📅</span>
+        <div class="feat-title">Schedule & Attendance</div>
+        <div class="feat-desc">Full season schedule synced across teams. Mark attendance per session — present, late, or absent. Sessions link directly to your practice calendar.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🎬</span>
+        <div class="feat-title">Film Room</div>
+        <div class="feat-desc">Dual-camera sync, live stat logging, shot chart, blade mode, and graphic overlays. Cut and export highlight reels. Desktop app for Mac and Windows.</div>
+        <span class="feat-tag live">Live — Desktop App</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📊</span>
+        <div class="feat-title">Stats & Recruiting</div>
+        <div class="feat-desc">Log game stats per player — PPG, RPG, APG, FG%, 3P% and more. Full college recruiting profiles with interest tracking and grad year management.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🔐</span>
+        <div class="feat-title">Role-Based Access</div>
+        <div class="feat-desc">Head Admin, Coach, Team Manager, Volunteer, and Player roles. Each person sees exactly what they need — nothing more. Finance pages hidden from coaching staff.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📱</span>
+        <div class="feat-title">Player Portal</div>
+        <div class="feat-desc">Players sign in with Google and see their own stats, team schedule, roster, and college profile. Clean, mobile-first view with no access to org financials.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">📈</span>
+        <div class="feat-title">Budget & Finance</div>
+        <div class="feat-desc">Bank balance tracking, income projections, spending tracker by category, season archiving, and a New Season Wizard that carries over returning players.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">☁️</span>
+        <div class="feat-title">Cloud Sync</div>
+        <div class="feat-desc">All your data lives in the cloud. Access your org dashboard from any device. Google SSO means no passwords to manage. Your roster is always current.</div>
+        <span class="feat-tag live">Live</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FILM ROOM SHOWCASE -->
+<section id="filmroom" class="filmroom-section">
+  <div class="filmroom-inner section-inner" style="padding: clamp(60px,8vw,120px) 0;">
+    <div class="filmroom-layout">
+
+      <!-- Real app screenshot -->
+      <div class="reveal">
+        <div class="filmroom-screenshot-wrap">
+          <img src="filmroom-screenshot.png" alt="NP Film Room — dual camera editing with live stat logging" />
+        </div>
+        <!-- Feature callout badges over screenshot -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+          <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;color:var(--green2);background:rgba(92,184,0,.08);border:1px solid rgba(92,184,0,.2);padding:4px 10px;border-radius:20px;">● Dual-Camera Sync</div>
+          <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;color:#3b82f6;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);padding:4px 10px;border-radius:20px;">● Live Stat Logging</div>
+          <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;color:var(--purple);background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);padding:4px 10px;border-radius:20px;">● Shot Chart</div>
+          <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;color:var(--orange);background:rgba(240,96,48,.08);border:1px solid rgba(240,96,48,.2);padding:4px 10px;border-radius:20px;">● Blade Mode</div>
+        </div>
+      </div>
+
+      <!-- Features list -->
+      <div class="filmroom-features reveal">
+        <div class="filmroom-badge">● Now Live — Mac Desktop App</div>
+        <h3>THE FILM ROOM<br><span style="color:var(--green2)">COACHES NEED</span></h3>
+        <p style="font-size:15px;color:var(--text2);line-height:1.7;margin-top:12px;">Designed around the dual-camera workflow AAU coaches actually use. One camera per basket. Sync them up. Edit both in one window.</p>
+        <ul class="filmroom-list">
+          <li>Dual-camera sync — load Cam 1 and Cam 2, mark a sync point, and both play together in perfect lockstep</li>
+          <li>3 view modes — PiP overlay, side-by-side comparison, and cut mode for timeline editing</li>
+          <li>Blade mode — click anywhere on the timeline to cut without lifting your hands off the keyboard</li>
+          <li>Live stat logging — log shots, rebounds, assists while watching film. Shot chart auto-updates with every pin</li>
+          <li>Full-court shot chart with makes/misses, player names, and auto court-flip at halftime</li>
+          <li>SportsCenter-style stat card overlays — player photo, name, number, and auto-pulled stats</li>
+          <li>Export clips via FFmpeg — cut exact moments and save to your highlight reel folder</li>
+        </ul>
+        <div class="filmroom-addon">
+          <div class="filmroom-addon-price">+$20<span style="font-size:14px;font-weight:400;color:var(--text3)">/mo</span></div>
+          <div class="filmroom-addon-label">
+            <strong>NP Film Room Desktop Add-on</strong>
+            Add to any plan. Mac now · Windows coming Q2 2026.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="section-inner">
+    <div class="reveal" style="text-align:center;margin-bottom:0;">
+      <div class="section-kicker" style="justify-content:center;">How It Works</div>
+      <h2 class="section-h2">UP AND RUNNING<br><span style="color:var(--green2)">IN MINUTES</span></h2>
+    </div>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Start Free</div>
+        <div class="step-desc">Click "Start Free Trial" and sign in with Google. No credit card, no invite needed. Your org is live in 60 seconds.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Add Your Roster</div>
+        <div class="step-desc">Add players manually or import your existing spreadsheet. Set teams, jersey numbers, age groups, and contact info.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Invite Your Staff</div>
+        <div class="step-desc">Add coaches and managers with role-based access. They sign in with Google — no app to install, no passwords to manage.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Run Your Season</div>
+        <div class="step-desc">Track payments, manage schedules, log game stats, cut film, and give players access to their own portal. Everything in one place.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="section-inner">
+    <div class="reveal">
+      <div class="section-kicker">Pricing</div>
+      <h2 class="section-h2">SIMPLE,<br>TRANSPARENT<br>PRICING</h2>
+      <p class="section-sub">14 days free on every plan. No credit card required. Scale as your org grows.</p>
+    </div>
+    <div class="tiers-grid reveal">
+
+      <div class="tier-card">
+        <div class="tier-name">STARTER</div>
+        <div class="tier-price" style="color:var(--green2);">$29</div>
+        <div class="tier-period">per month</div>
+        <div class="tier-savings">$290/yr — save 2 months</div>
+        <ul class="tier-features">
+          <li>1 team, up to 15 players</li>
+          <li>Roster + schedule + attendance</li>
+          <li>Payment tracking</li>
+          <li>Basic player profiles</li>
+          <li>Cloud sync + Google SSO</li>
+          <li>Email support</li>
+        </ul>
+        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline">Start Free Trial</a>
+      </div>
+
+      <div class="tier-card featured">
+        <div class="tier-name" style="color:var(--green2);">PRO</div>
+        <div class="tier-price" style="color:var(--green2);">$79</div>
+        <div class="tier-period">per month</div>
+        <div class="tier-savings">$790/yr — save 2 months</div>
+        <ul class="tier-features">
+          <li>Up to 4 teams, 60 players</li>
+          <li>Everything in Starter</li>
+          <li>Stats + recruiting profiles</li>
+          <li>Film Room access</li>
+          <li>Player portal accounts</li>
+          <li>Budget & finance tools</li>
+        </ul>
+        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-solid">Start Free Trial</a>
+      </div>
+
+      <div class="tier-card">
+        <div class="tier-name" style="color:var(--purple);">ELITE</div>
+        <div class="tier-price" style="color:var(--purple);">$149</div>
+        <div class="tier-period">per month</div>
+        <div class="tier-savings">$1,490/yr — save 2 months</div>
+        <ul class="tier-features">
+          <li>Unlimited teams + players</li>
+          <li>Everything in Pro</li>
+          <li>Parent portal</li>
+          <li>Analytics dashboard</li>
+          <li>Priority support</li>
+          <li>Custom branding</li>
+        </ul>
+        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline" style="border-color:rgba(168,85,247,.3);color:var(--purple);">Start Free Trial</a>
+      </div>
+
+    </div>
+
+    <!-- Film Room add-on -->
+    <div class="filmroom-tier reveal">
+      <div style="font-size:28px;">🎬</div>
+      <div class="filmroom-tier-info">
+        <strong>NP Film Room Desktop — Add-on</strong>
+        <span>Dual-camera editing, live stat logging, shot chart, graphic overlays, and FFmpeg export. Mac now · Windows Q2 2026.</span>
+      </div>
+      <div class="filmroom-tier-price">+$20<span style="font-size:13px;font-weight:400;color:var(--text3)">/mo</span></div>
+      <a href="https://delta-dubs.vercel.app" class="filmroom-tier-btn">Add to Plan</a>
+    </div>
+
+    <p class="reveal" style="text-align:center;margin-top:20px;font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:1px;">
+      All plans include a 14-day free trial · No credit card required · Cancel anytime · Annual billing saves 2 months
+    </p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="section-inner">
+    <div class="cta-section reveal">
+      <h2 class="cta-h2">READY TO<br><span style="color:var(--green2)">NEXT PLAY?</span></h2>
+      <p class="cta-sub">
+        Start your free 14-day trial today. No credit card. No setup fee. Your org could be live in the next 5 minutes.
+      </p>
+      <a href="https://delta-dubs.vercel.app" class="cta-btn">Start Free Trial →</a>
+      <div class="cta-note">
+        Questions? <a href="mailto:nextplaysports.ca@gmail.com">nextplaysports.ca@gmail.com</a> · Typically responds within 24 hours
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="NP_Font.png" alt="Next Play Sports Media" style="height:32px;width:auto;mix-blend-mode:screen;" />
+  </div>
+  <div class="footer-copy">© 2026 Next Play Sports Media & Management. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#filmroom">Film Room</a>
+    <a href="#pricing">Pricing</a>
+    <a href="mailto:nextplaysports.ca@gmail.com">Contact</a>
+  </div>
+</footer>
+
+<script>
+// Scroll progress line
+const sline = document.getElementById('sline')
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight)
+  sline.style.width = (pct * 100) + '%'
+})
+
+// Reveal on scroll
+const reveals = document.querySelectorAll('.reveal')
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target) } })
+}, { threshold: 0.1 })
+reveals.forEach(r => obs.observe(r))
+</script>
+</body>
+</html>

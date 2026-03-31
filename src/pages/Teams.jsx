@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../hooks/useStore'
 import { useNavigate } from 'react-router-dom'
 import { usePermissions } from '../hooks/usePermissions'
@@ -11,14 +11,19 @@ export default function Teams() {
   const { isPlayer, teamAccess, canSeeFinancials } = usePermissions()
   const navigate = useNavigate()
 
-  // Players only see their own team
-  const defaultTeam = isPlayer ? teamAccess : (orgTeams[0]?.id || '')
-  const [active, setActive] = useState(defaultTeam)
-  const availableTeams = isPlayer ? orgTeams.filter(t => t.id === teamAccess) : orgTeams
+  const [active, setActive] = useState('')
 
-  const team = orgTeams.find(t => t.id === active)
-  const roster   = players.filter(p => p.team === active && p.status === 'On Roster')
-  const pending  = players.filter(p => p.team === active && p.status !== 'On Roster')
+  // Set active team once orgTeams loads
+  useEffect(() => {
+    if (orgTeams.length > 0 && !active) {
+      setActive(isPlayer ? teamAccess : orgTeams[0]?.id || orgTeams[0]?.label || '')
+    }
+  }, [orgTeams])
+
+  const availableTeams = isPlayer ? orgTeams.filter(t => t.id === teamAccess || t.label === teamAccess) : orgTeams
+  const team    = orgTeams.find(t => t.id === active || t.label === active)
+  const roster  = players.filter(p => p.team === active && p.status === 'On Roster')
+  const pending = players.filter(p => p.team === active && p.status !== 'On Roster')
   const collected = roster.reduce((s,p) => s + ((p.isNew ? 385 : 320) - (p.balance||0)), 0)
   const projected = roster.reduce((s,p) => s + (p.isNew ? 385 : 320), 0)
 
@@ -29,6 +34,24 @@ export default function Teams() {
     if (p.deposit) return <span className="badge badge-yellow">${p.balance} left</span>
     return <span className="badge badge-red">No deposit</span>
   }
+
+  // Show loading state until teams are ready
+  if (orgTeams.length === 0) return (
+    <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>
+      <div style={{ fontSize:32, marginBottom:12 }}>◈</div>
+      <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:8 }}>Loading teams…</div>
+      <div style={{ fontSize:13 }}>If this persists, add teams in the Admin portal or contact support.</div>
+    </div>
+  )
+
+  // Guard against team not found
+  if (!team) return (
+    <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>
+      <div style={{ fontSize:32, marginBottom:12 }}>◈</div>
+      <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:8 }}>No teams found</div>
+      <div style={{ fontSize:13 }}>Add your teams through the Admin portal.</div>
+    </div>
+  )
 
   return (
     <div style={{ padding: 24 }}>

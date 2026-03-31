@@ -19,7 +19,8 @@ async function callEmail(endpoint, body) {
 }
 
 export default function Admin() {
-  const { admins, addAdmin, removeAdmin, showToast } = useStore()
+  const { admins, addAdmin, removeAdmin, showToast, orgTeams } = useStore()
+  const TEAMS_OPT = ['All Teams', ...orgTeams.map(t => t.id || t.label || t.name).filter(Boolean)]
   const [showModal, setShowModal]   = useState(false)
   const [form, setForm]             = useState(BLANK)
   const [sendingReset, setSendingReset] = useState(null)

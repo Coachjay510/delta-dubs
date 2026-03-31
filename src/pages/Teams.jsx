@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useStore, TEAMS } from '../hooks/useStore'
+import { useStore } from '../hooks/useStore'
 import { useNavigate } from 'react-router-dom'
 import { usePermissions } from '../hooks/usePermissions'
 
@@ -7,16 +7,16 @@ const AV = { Drive:'av-drive', Energy:'av-energy', Passion:'av-passion', Power:'
 function initials(name) { return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase() }
 
 export default function Teams() {
-  const { players } = useStore()
+  const { players, orgTeams } = useStore()
   const { isPlayer, teamAccess, canSeeFinancials } = usePermissions()
   const navigate = useNavigate()
 
   // Players only see their own team
-  const defaultTeam = isPlayer ? teamAccess : 'Drive'
+  const defaultTeam = isPlayer ? teamAccess : (orgTeams[0]?.id || '')
   const [active, setActive] = useState(defaultTeam)
-  const availableTeams = isPlayer ? TEAMS.filter(t => t.id === teamAccess) : TEAMS
+  const availableTeams = isPlayer ? orgTeams.filter(t => t.id === teamAccess) : orgTeams
 
-  const team     = TEAMS.find(t => t.id === active)
+  const team = orgTeams.find(t => t.id === active)
   const roster   = players.filter(p => p.team === active && p.status === 'On Roster')
   const pending  = players.filter(p => p.team === active && p.status !== 'On Roster')
   const collected = roster.reduce((s,p) => s + ((p.isNew ? 385 : 320) - (p.balance||0)), 0)

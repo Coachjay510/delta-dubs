@@ -76,7 +76,8 @@ function initials(fname, lname) {
 }
 
 export default function Staff() {
-  const { admins, addAdmin, removeAdmin, showToast } = useStore()
+  const { admins, addAdmin, removeAdmin, showToast, orgTeams } = useStore()
+  const TEAMS_OPT = orgTeams.map(t => t.id || t.label || t.name).filter(Boolean)
   const { user } = useAuth()
   const [editingId, setEditingId]   = useState(null)
   const [editForm, setEditForm]     = useState({})

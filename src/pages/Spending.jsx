@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react'
-import { useStore, TEAMS } from '../hooks/useStore'
+import { useStore } from '../hooks/useStore'
 
 const CATEGORIES = ['Gym Rental','Game / Tournament Entry','Jerseys & Bags','Equipment','Travel','Referee Fees','AAU Registration','Marketing / Website','Coaching Stipend','Other']
 const BLANK = { desc:'', amount:'', date:'', category:'Gym Rental', team:'All', status:'paid', notes:'' }
 
 export default function Spending() {
-  const { spending, addSpend, deleteSpend } = useStore()
+  const { spending, orgTeams, addSpend, deleteSpend } = useStore()
   const [catF, setCatF]     = useState('')
   const [teamF, setTeamF]   = useState('')
   const [statusF, setStatusF] = useState('')
@@ -71,7 +71,7 @@ export default function Spending() {
         </select>
         <select className="filter-select" value={teamF} onChange={e=>setTeamF(e.target.value)}>
           <option value="">All Teams</option>
-          {TEAMS.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+          {orgTeams.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
         </select>
         <select className="filter-select" value={statusF} onChange={e=>setStatusF(e.target.value)}>
           <option value="">All Statuses</option>
@@ -165,7 +165,7 @@ export default function Spending() {
                   <label className="form-label">Team</label>
                   <select className="form-select" value={form.team} onChange={e=>setF('team',e.target.value)}>
                     <option value="All">All Teams</option>
-                    {TEAMS.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
+                    {orgTeams.map(t=><option key={t.id} value={t.id}>{t.label}</option>)}
                   </select>
                 </div>
                 <div className="form-group">

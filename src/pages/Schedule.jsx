@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
-import { useStore, TEAMS } from '../hooks/useStore'
+import { useStore } from '../hooks/useStore'
 
 const BLANK_EVENT = { title:'', type:'Practice', teams:'', date:'', time:'', location:'', notes:'' }
 
 export default function Schedule() {
-  const { schedule, addEvent, updateEvent, deleteEvent } = useStore()
+  const { schedule, orgTeams, addEvent, updateEvent, deleteEvent } = useStore()
   const [typeF, setTypeF]   = useState('')
   const [teamF, setTeamF]   = useState('')
   const [monthF, setMonthF] = useState('')
@@ -55,7 +55,7 @@ export default function Schedule() {
         </select>
         <select className="filter-select" value={teamF} onChange={e => setTeamF(e.target.value)}>
           <option value="">All Teams</option>
-          {TEAMS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          {orgTeams.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
         </select>
         <select className="filter-select" value={monthF} onChange={e => setMonthF(e.target.value)}>
           <option value="">All Months</option>

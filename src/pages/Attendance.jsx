@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { useStore, TEAMS } from '../hooks/useStore'
+import { useStore } from '../hooks/useStore'
 
 export default function Attendance() {
-  const { players, schedule, showToast } = useStore()
+  const { players, orgTeams, schedule, showToast } = useStore()
   const [teamF, setTeamF]       = useState('Drive')
   const [selectedEvent, setSelectedEvent] = useState('')
   const [records, setRecords]   = useState({})
@@ -85,7 +85,7 @@ export default function Attendance() {
           <div className="form-label" style={{ marginBottom:5 }}>Team</div>
           <select className="filter-select" value={teamF}
             onChange={e => { setTeamF(e.target.value); setSelectedEvent(''); setRecords({}) }}>
-            {TEAMS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            {orgTeams.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
           </select>
         </div>
 

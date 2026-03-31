@@ -1,9 +1,9 @@
-import { useStore, TEAMS } from '../hooks/useStore'
+import { useStore } from '../hooks/useStore'
 import { useNavigate } from 'react-router-dom'
 import { usePermissions } from '../hooks/usePermissions'
 
 export default function Dashboard() {
-  const { players, schedule, finance, projectedIncome, totalOutstanding, paidCount } = useStore()
+  const { players, schedule, finance, projectedIncome, totalOutstanding, paidCount, orgTeams } = useStore()
   const { canSeeFinancials } = usePermissions()
   const navigate = useNavigate()
 
@@ -45,7 +45,7 @@ export default function Dashboard() {
           <div className="stat-icon">○</div>
           <div className="stat-label">Players on Roster</div>
           <div className="stat-value">{onRoster.length}</div>
-          <div className="stat-sub">Across 4 teams</div>
+          <div className="stat-sub">Across {orgTeams.length || 0} teams</div>
         </div>
         {canSeeFinancials && <>
           <div className="stat-card sc-green">
@@ -71,7 +71,7 @@ export default function Dashboard() {
 
       {/* Team Cards */}
       <div className="grid-4" style={{ marginBottom: 20 }}>
-        {TEAMS.map(team => (
+        {orgTeams.map(team => (
           <div
             key={team.id}
             onClick={() => navigate('/teams')}
@@ -171,7 +171,7 @@ export default function Dashboard() {
           <div className="card">
             <div className="card-header"><span className="card-title">Team Roster Count</span></div>
             <div className="card-body">
-              {TEAMS.map(team => (
+              {orgTeams.map(team => (
                 <div key={team.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border2)' }}>
                   <span style={{ fontSize:12, fontWeight:700, color:team.color, width:70 }}>{team.label}</span>
                   <span style={{ fontFamily:'var(--font-display)', fontSize:22, color:team.color }}>

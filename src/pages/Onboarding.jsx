@@ -212,7 +212,7 @@ export default function Onboarding() {
                   <div key={i} style={{ display:'flex', gap:10, alignItems:'center',
                     background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:'10px 12px' }}>
                     {/* Color picker */}
-                    <div style={{ display:'flex', gap:4', flexShrink:0 }}>
+                    <div style={{ display:'flex', gap:4, flexShrink:0 }}>
                       {TEAM_COLORS.map(c => (
                         <button key={c} onClick={() => updateTeam(i,'color',c)}
                           style={{ width:14, height:14, borderRadius:'50%', background:c, border:'none',

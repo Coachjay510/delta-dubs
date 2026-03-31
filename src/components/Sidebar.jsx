@@ -45,7 +45,7 @@ export default function Sidebar() {
   }[role] || '#4e576e'
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={styles.sidebar} style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <div className={styles.logo}>
         <div className={styles.logoMark}>NP</div>
         <div className={styles.logoText}>
@@ -70,6 +70,7 @@ export default function Sidebar() {
           display: 'flex',
           alignItems: 'center',
           gap: 7,
+          flexShrink: 0,
         }}>
           <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color: roleColor }}>
             {role}
@@ -80,7 +81,8 @@ export default function Sidebar() {
         </div>
       )}
 
-      <nav className={styles.nav}>
+      {/* Scrollable nav */}
+      <nav className={styles.nav} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
         {NAV.map((item, i) => {
           if (item.section) return (
             <div key={i} className={styles.section}>{item.section}</div>
@@ -109,7 +111,8 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className={styles.footer}>
+      {/* Footer always visible at bottom */}
+      <div className={styles.footer} style={{ flexShrink: 0 }}>
         {user && (
           <div className={styles.userRow}>
             <div className={styles.userAvatar}>

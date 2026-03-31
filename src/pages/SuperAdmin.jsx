@@ -21,6 +21,37 @@ const TIER_COLORS = {
 
 const TIER_PRICES = { Starter: 49, Pro: 99, Elite: 199 }
 
+// Default landing page content
+const DEFAULT_LANDING = {
+  hero: {
+    kicker: 'Built by a coach · Used by AAU programs',
+    line1: 'RUN YOUR',
+    line2: 'AAU ORG',
+    line3: 'DIFFERENTLY',
+    sub: 'Next Play Sports Media & Management is the all-in-one platform built exclusively for AAU and high school basketball — roster, payments, film room, stats, and recruiting in one place.',
+    trialNote: '14 days free · No credit card required · Cancel anytime',
+  },
+  sections: {
+    features: true,
+    filmroom: true,
+    howItWorks: true,
+    pricing: true,
+    cta: true,
+  },
+  pricing: {
+    starter: { name: 'STARTER', price: '$29', period: 'per month', savings: '$290/yr — save 2 months' },
+    pro:     { name: 'PRO',     price: '$79', period: 'per month', savings: '$790/yr — save 2 months' },
+    elite:   { name: 'ELITE',   price: '$149', period: 'per month', savings: '$1,490/yr — save 2 months' },
+    filmroom: { price: '+$20', label: 'NP Film Room Desktop — Add-on' },
+  },
+  cta: {
+    headline1: 'READY TO',
+    headline2: 'NEXT PLAY?',
+    sub: 'Start your free 14-day trial today. No credit card. No setup fee. Your org could be live in the next 5 minutes.',
+    btnText: 'Start Free Trial →',
+  },
+}
+
 function Badge({ label, color, bg, border }) {
   return (
     <span style={{
@@ -31,6 +62,266 @@ function Badge({ label, color, bg, border }) {
   )
 }
 
+// ── LANDING EDITOR ──────────────────────────────────────────────
+function LandingEditor() {
+  const [content, setContent] = useState(DEFAULT_LANDING)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [activeSection, setActiveSection] = useState('hero')
+
+  useEffect(() => {
+    // Load from Supabase if stored
+    supabase.from('orgs').select('landing_content').eq('id', 'np-platform').single().then(({ data }) => {
+      if (data?.landing_content) {
+        try { setContent({ ...DEFAULT_LANDING, ...JSON.parse(data.landing_content) }) } catch {}
+      }
+    })
+  }, [])
+
+  async function save() {
+    setSaving(true)
+    await supabase.from('orgs').upsert({ id: 'np-platform', landing_content: JSON.stringify(content) }, { onConflict: 'id' })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  function update(path, value) {
+    const keys = path.split('.')
+    setContent(prev => {
+      const next = JSON.parse(JSON.stringify(prev))
+      let obj = next
+      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]]
+      obj[keys[keys.length - 1]] = value
+      return next
+    })
+  }
+
+  const sectionTabs = [
+    { id: 'hero',      label: '🎯 Hero' },
+    { id: 'sections',  label: '📋 Sections' },
+    { id: 'pricing',   label: '💰 Pricing' },
+    { id: 'cta',       label: '📢 CTA' },
+  ]
+
+  const inputStyle = {
+    width: '100%', background: 'var(--bg3)', border: '1px solid var(--border2)',
+    borderRadius: 6, padding: '9px 12px', color: 'var(--text)',
+    fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none',
+    marginTop: 4,
+  }
+  const textareaStyle = { ...inputStyle, minHeight: 80, resize: 'vertical' }
+  const labelStyle = { fontSize: 11, fontWeight: 700, color: 'var(--text3)', letterSpacing: 1, textTransform: 'uppercase' }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg,rgba(92,184,0,0.1),rgba(92,184,0,0.04))',
+        border: '1px solid rgba(92,184,0,0.25)', borderRadius: 'var(--radius)',
+        padding: '16px 20px', marginBottom: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+      }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--np-green2)', letterSpacing: .5 }}>
+            LANDING PAGE EDITOR
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+            Changes save to Supabase. Push updated landing page to deploy live.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <a href="https://np-landing.vercel.app" target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+            👁 Preview Live
+          </a>
+          <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
+            {saving ? 'Saving…' : saved ? '✅ Saved!' : '💾 Save Changes'}
+          </button>
+        </div>
+      </div>
+
+      {/* Section tabs */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '1px solid var(--border2)' }}>
+        {sectionTabs.map(t => (
+          <button key={t.id} onClick={() => setActiveSection(t.id)} style={{
+            padding: '9px 18px', background: 'none', border: 'none',
+            borderBottom: activeSection === t.id ? '2px solid var(--np-green2)' : '2px solid transparent',
+            color: activeSection === t.id ? 'var(--np-green2)' : 'var(--text3)',
+            fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', transition: 'all .15s', marginBottom: -1,
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ── HERO ── */}
+      {activeSection === 'hero' && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Hero Section</span></div>
+          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="form-group full" style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Kicker text</label>
+              <input style={inputStyle} value={content.hero.kicker}
+                onChange={e => update('hero.kicker', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label style={labelStyle}>Headline Line 1</label>
+              <input style={inputStyle} value={content.hero.line1}
+                onChange={e => update('hero.line1', e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label style={labelStyle}>Headline Line 2 (outline)</label>
+              <input style={inputStyle} value={content.hero.line2}
+                onChange={e => update('hero.line2', e.target.value)} />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Headline Line 3 (green)</label>
+              <input style={inputStyle} value={content.hero.line3}
+                onChange={e => update('hero.line3', e.target.value)} />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Subheadline</label>
+              <textarea style={textareaStyle} value={content.hero.sub}
+                onChange={e => update('hero.sub', e.target.value)} />
+            </div>
+            <div className="form-group" style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Trial note (below buttons)</label>
+              <input style={inputStyle} value={content.hero.trialNote}
+                onChange={e => update('hero.trialNote', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTIONS TOGGLE ── */}
+      {activeSection === 'sections' && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">Show / Hide Sections</span></div>
+          <div className="card-body">
+            {[
+              { key: 'features',   label: 'Features Grid',     desc: 'The 9-card features overview' },
+              { key: 'filmroom',   label: 'Film Room Showcase', desc: 'Screenshot + feature list' },
+              { key: 'howItWorks', label: 'How It Works',       desc: '4-step onboarding flow' },
+              { key: 'pricing',    label: 'Pricing',            desc: 'Tier cards + Film Room add-on' },
+              { key: 'cta',        label: 'CTA Banner',         desc: 'Final call-to-action section' },
+            ].map(({ key, label, desc }) => (
+              <div key={key} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '14px 0', borderBottom: '1px solid var(--border2)',
+              }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{desc}</div>
+                </div>
+                <button
+                  onClick={() => update(`sections.${key}`, !content.sections[key])}
+                  style={{
+                    width: 48, height: 26, borderRadius: 13,
+                    background: content.sections[key] ? 'var(--np-green)' : 'var(--bg4)',
+                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background .2s',
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: content.sections[key] ? 24 : 4,
+                    width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                    transition: 'left .2s', display: 'block',
+                  }} />
+                </button>
+              </div>
+            ))}
+            <div style={{ marginTop: 16, padding: '12px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 6, fontSize: 12, color: 'var(--text3)' }}>
+              ⚠️ Section toggles save to Supabase but require the landing page to read from your API to take effect live. Connect your landing page to fetch this config to enable live toggling.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PRICING ── */}
+      {activeSection === 'pricing' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[
+            { key: 'starter', label: 'Starter Plan', color: '#5cb800' },
+            { key: 'pro',     label: 'Pro Plan',     color: '#3b82f6' },
+            { key: 'elite',   label: 'Elite Plan',   color: '#a855f7' },
+          ].map(({ key, label, color }) => (
+            <div key={key} className="card">
+              <div className="card-header">
+                <span className="card-title" style={{ color }}>{label}</span>
+              </div>
+              <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div>
+                  <label style={labelStyle}>Plan Name</label>
+                  <input style={inputStyle} value={content.pricing[key].name}
+                    onChange={e => update(`pricing.${key}.name`, e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Price (e.g. $79)</label>
+                  <input style={inputStyle} value={content.pricing[key].price}
+                    onChange={e => update(`pricing.${key}.price`, e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Period</label>
+                  <input style={inputStyle} value={content.pricing[key].period}
+                    onChange={e => update(`pricing.${key}.period`, e.target.value)} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Savings note</label>
+                  <input style={inputStyle} value={content.pricing[key].savings}
+                    onChange={e => update(`pricing.${key}.savings`, e.target.value)} />
+                </div>
+              </div>
+            </div>
+          ))}
+          <div className="card">
+            <div className="card-header"><span className="card-title" style={{ color: '#a855f7' }}>Film Room Add-on</span></div>
+            <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div>
+                <label style={labelStyle}>Price</label>
+                <input style={inputStyle} value={content.pricing.filmroom.price}
+                  onChange={e => update('pricing.filmroom.price', e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>Label</label>
+                <input style={inputStyle} value={content.pricing.filmroom.label}
+                  onChange={e => update('pricing.filmroom.label', e.target.value)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CTA ── */}
+      {activeSection === 'cta' && (
+        <div className="card">
+          <div className="card-header"><span className="card-title">CTA Section</span></div>
+          <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={labelStyle}>Headline Line 1</label>
+              <input style={inputStyle} value={content.cta.headline1}
+                onChange={e => update('cta.headline1', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Headline Line 2 (green)</label>
+              <input style={inputStyle} value={content.cta.headline2}
+                onChange={e => update('cta.headline2', e.target.value)} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={labelStyle}>Subtext</label>
+              <textarea style={textareaStyle} value={content.cta.sub}
+                onChange={e => update('cta.sub', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Button Text</label>
+              <input style={inputStyle} value={content.cta.btnText}
+                onChange={e => update('cta.btnText', e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── MAIN SUPERADMIN ─────────────────────────────────────────────
 export default function SuperAdmin() {
   const { user } = useAuth()
   const [tab, setTab]               = useState('overview')
@@ -87,19 +378,16 @@ export default function SuperAdmin() {
     setSaving(true)
     try {
       const orgId = inviteForm.orgId || inviteForm.orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-      // Create org
       await supabase.from('orgs').insert({
         id: orgId, name: inviteForm.orgName,
         ein: inviteForm.ein, tier: inviteForm.tier, status: 'trial',
         trial_started_at: new Date().toISOString(),
       })
-      // Create admin record
       await supabase.from('admins').insert({
         org_id: orgId, fname: inviteForm.adminName.split(' ')[0],
         lname: inviteForm.adminName.split(' ').slice(1).join(' '),
         email: inviteForm.adminEmail, role: 'Head Admin', team_access: 'All Teams',
       })
-      // Send welcome email
       await fetch(`${API}/api/email/welcome`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminName: inviteForm.adminName, orgName: inviteForm.orgName, email: inviteForm.adminEmail }),
@@ -151,10 +439,11 @@ export default function SuperAdmin() {
   const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'
 
   const TABS = [
-    { id:'overview', label:'Overview' },
-    { id:'orgs',     label:`Orgs (${orgs.length})` },
-    { id:'users',    label:`Users (${orgUsers.length})` },
-    { id:'superadmins', label:'Super Admins' },
+    { id:'overview',       label:'Overview' },
+    { id:'orgs',           label:`Orgs (${orgs.length})` },
+    { id:'users',          label:`Users (${orgUsers.length})` },
+    { id:'superadmins',    label:'Super Admins' },
+    { id:'landing-editor', label:'🌐 Landing Editor' },
   ]
 
   return (
@@ -181,19 +470,22 @@ export default function SuperAdmin() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'1px solid var(--border2)' }}>
+      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'1px solid var(--border2)', overflowX:'auto' }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding:'10px 20px', background:'none', border:'none',
             borderBottom: tab===t.id ? '2px solid #a855f7' : '2px solid transparent',
             color: tab===t.id ? '#a855f7' : 'var(--text3)',
             fontFamily:'var(--font-body)', fontSize:13, fontWeight:600,
-            cursor:'pointer', transition:'all .15s', marginBottom:-1,
+            cursor:'pointer', transition:'all .15s', marginBottom:-1, whiteSpace:'nowrap',
           }}>{t.label}</button>
         ))}
       </div>
 
-      {loading && <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>Loading…</div>}
+      {loading && tab !== 'landing-editor' && <div style={{ textAlign:'center', padding:40, color:'var(--text3)' }}>Loading…</div>}
+
+      {/* ── LANDING EDITOR TAB ── */}
+      {tab === 'landing-editor' && <LandingEditor />}
 
       {/* ── OVERVIEW TAB ── */}
       {!loading && tab === 'overview' && (
@@ -213,7 +505,6 @@ export default function SuperAdmin() {
             ))}
           </div>
 
-          {/* Tier breakdown */}
           <div className="grid-2" style={{ gap:18, marginBottom:18 }}>
             <div className="card">
               <div className="card-header"><span className="card-title">Orgs by Tier</span></div>
@@ -310,8 +601,6 @@ export default function SuperAdmin() {
                 {isExpanded && (
                   <div style={{ borderTop:'1px solid var(--border2)', padding:'20px' }}>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:20 }}>
-
-                      {/* Controls */}
                       <div>
                         <div className="section-title" style={{ fontSize:12 }}>Controls</div>
                         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -342,7 +631,6 @@ export default function SuperAdmin() {
                         </div>
                       </div>
 
-                      {/* Org details */}
                       <div>
                         <div className="section-title" style={{ fontSize:12 }}>Details</div>
                         {[['EIN', org.ein],['Season', org.season],['Website', org.website]].filter(([,v])=>v).map(([l,v])=>(
@@ -353,7 +641,6 @@ export default function SuperAdmin() {
                         ))}
                       </div>
 
-                      {/* Admins */}
                       <div>
                         <div className="section-title" style={{ fontSize:12 }}>Admins ({members.length})</div>
                         <div style={{ maxHeight:150, overflowY:'auto' }}>
@@ -422,7 +709,6 @@ export default function SuperAdmin() {
               <button className="btn btn-primary btn-sm" onClick={() => setShowSuperAdminModal(true)}>+ Add Super Admin</button>
             </div>
             <div style={{ padding:'0 18px' }}>
-              {/* Always show current user */}
               {SUPER_ADMINS.map(email => (
                 <div key={email} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderBottom:'1px solid var(--border2)' }}>
                   <div style={{
@@ -456,7 +742,6 @@ export default function SuperAdmin() {
               ))}
             </div>
           </div>
-
           <div style={{ padding:'12px 18px', background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:'var(--radius)', fontSize:12, color:'var(--text3)' }}>
             ⚠️ Super admins have full platform access. Add only trusted Next Play team members.
           </div>

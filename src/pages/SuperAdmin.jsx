@@ -14,12 +14,12 @@ const STATUS_COLORS = {
 }
 
 const TIER_COLORS = {
-  Starter: '#5cb800',
-  Pro:     '#3b82f6',
-  Elite:   '#a855f7',
+  Rookie:  '#8d97b0',
+  Varsity: '#5cb800',
+  Pro:     '#a855f7',
 }
 
-const TIER_PRICES = { Starter: 49, Pro: 99, Elite: 199 }
+const TIER_PRICES = { Rookie: 0, Varsity: 150, Pro: 350 }
 
 // Default landing page content
 const DEFAULT_LANDING = {
@@ -31,6 +31,11 @@ const DEFAULT_LANDING = {
     sub: 'Next Play Sports Media & Management is the all-in-one platform built exclusively for AAU and high school basketball — roster, payments, film room, stats, and recruiting in one place.',
     trialNote: '14 days free · No credit card required · Cancel anytime',
   },
+  logos: {
+    main: '',
+    icon: '',
+    font: '',
+  },
   sections: {
     features: true,
     filmroom: true,
@@ -39,10 +44,10 @@ const DEFAULT_LANDING = {
     cta: true,
   },
   pricing: {
-    starter: { name: 'STARTER', price: '$29', period: 'per month', savings: '$290/yr — save 2 months' },
-    pro:     { name: 'PRO',     price: '$79', period: 'per month', savings: '$790/yr — save 2 months' },
-    elite:   { name: 'ELITE',   price: '$149', period: 'per month', savings: '$1,490/yr — save 2 months' },
-    filmroom: { price: '+$20', label: 'NP Film Room Desktop — Add-on' },
+    rookie:   { name: 'ROOKIE',  price: '$0',   yearlyPrice: '$0',   monthlyPrice: '$0',  period: 'forever free',  savings: 'Get started at no cost' },
+    varsity:  { name: 'VARSITY', price: '$150', yearlyPrice: '$150', monthlyPrice: '$15', period: 'per year',       savings: '~$12.50/mo · Best for growing orgs' },
+    pro:      { name: 'PRO',     price: '$350', yearlyPrice: '$350', monthlyPrice: '$32', period: 'per year',       savings: '~$29/mo · For serious programs' },
+    filmroom: { price: '+$30',   yearlyPrice: '+$30/yr', monthlyPrice: '+$3/mo', label: 'NP Film Room Desktop — Add-on' },
   },
   cta: {
     headline1: 'READY TO',
@@ -99,6 +104,7 @@ function LandingEditor() {
 
   const sectionTabs = [
     { id: 'hero',      label: '🎯 Hero' },
+    { id: 'logos',     label: '🖼 Logos' },
     { id: 'sections',  label: '📋 Sections' },
     { id: 'pricing',   label: '💰 Pricing' },
     { id: 'cta',       label: '📢 CTA' },
@@ -131,7 +137,7 @@ function LandingEditor() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a href="https://np-landing.vercel.app" target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+          <a href="https://np-landing-seven.vercel.app/" target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
             👁 Preview Live
           </a>
           <button className="btn btn-primary btn-sm" onClick={save} disabled={saving}>
@@ -235,13 +241,68 @@ function LandingEditor() {
         </div>
       )}
 
+      {/* ── LOGOS ── */}
+      {activeSection === 'logos' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[
+            { key: 'main',  label: 'Main Logo (NP_Main.png)',  desc: 'Large logo used in hero and footer' },
+            { key: 'icon',  label: 'Icon Logo (NP_Logo_abrev.png)', desc: 'Small square icon used in nav' },
+            { key: 'font',  label: 'Font Logo (NP_Font.png)',  desc: 'Text wordmark used in nav and footer' },
+          ].map(({ key, label, desc }) => (
+            <div key={key} className="card">
+              <div className="card-header"><span className="card-title">{label}</span></div>
+              <div className="card-body" style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+                {/* Preview */}
+                <div style={{
+                  width: 120, height: 80, background: 'var(--bg3)', border: '1px solid var(--border2)',
+                  borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {content.logos[key]
+                    ? <img src={content.logos[key]} alt={label} style={{ maxWidth: 110, maxHeight: 70, objectFit: 'contain' }} />
+                    : <span style={{ fontSize: 11, color: 'var(--text3)' }}>No image</span>
+                  }
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>{desc}</div>
+                  <label style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    padding: '9px 16px', background: 'var(--bg3)', border: '1px solid var(--border2)',
+                    borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--text2)',
+                    transition: 'border-color .2s',
+                  }}>
+                    📁 Upload Image
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
+                      const file = e.target.files[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = ev => update(`logos.${key}`, ev.target.result)
+                      reader.readAsDataURL(file)
+                    }} />
+                  </label>
+                  {content.logos[key] && (
+                    <button onClick={() => update(`logos.${key}`, '')} style={{
+                      marginLeft: 8, padding: '9px 14px', background: 'none',
+                      border: '1px solid rgba(239,68,68,.3)', borderRadius: 6,
+                      color: 'var(--red)', fontSize: 13, cursor: 'pointer',
+                    }}>Remove</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          <div style={{ padding: '12px 14px', background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)', borderRadius: 6, fontSize: 12, color: 'var(--text3)' }}>
+            ⚠️ Logo changes save to Supabase as base64. To apply them live, the landing page needs to fetch this config from Supabase on load.
+          </div>
+        </div>
+      )}
+
       {/* ── PRICING ── */}
       {activeSection === 'pricing' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {[
-            { key: 'starter', label: 'Starter Plan', color: '#5cb800' },
-            { key: 'pro',     label: 'Pro Plan',     color: '#3b82f6' },
-            { key: 'elite',   label: 'Elite Plan',   color: '#a855f7' },
+            { key: 'rookie',  label: 'Rookie Plan (Free)', color: 'var(--text2)' },
+            { key: 'varsity', label: 'Varsity Plan',       color: '#5cb800' },
+            { key: 'pro',     label: 'Pro Plan',           color: '#a855f7' },
           ].map(({ key, label, color }) => (
             <div key={key} className="card">
               <div className="card-header">
@@ -254,14 +315,14 @@ function LandingEditor() {
                     onChange={e => update(`pricing.${key}.name`, e.target.value)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Price (e.g. $79)</label>
-                  <input style={inputStyle} value={content.pricing[key].price}
-                    onChange={e => update(`pricing.${key}.price`, e.target.value)} />
+                  <label style={labelStyle}>Yearly Price (e.g. $150)</label>
+                  <input style={inputStyle} value={content.pricing[key].yearlyPrice}
+                    onChange={e => update(`pricing.${key}.yearlyPrice`, e.target.value)} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Period</label>
-                  <input style={inputStyle} value={content.pricing[key].period}
-                    onChange={e => update(`pricing.${key}.period`, e.target.value)} />
+                  <label style={labelStyle}>Monthly Price (e.g. $15)</label>
+                  <input style={inputStyle} value={content.pricing[key].monthlyPrice}
+                    onChange={e => update(`pricing.${key}.monthlyPrice`, e.target.value)} />
                 </div>
                 <div>
                   <label style={labelStyle}>Savings note</label>
@@ -275,11 +336,16 @@ function LandingEditor() {
             <div className="card-header"><span className="card-title" style={{ color: '#a855f7' }}>Film Room Add-on</span></div>
             <div className="card-body" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div>
-                <label style={labelStyle}>Price</label>
-                <input style={inputStyle} value={content.pricing.filmroom.price}
-                  onChange={e => update('pricing.filmroom.price', e.target.value)} />
+                <label style={labelStyle}>Yearly Price (e.g. +$30/yr)</label>
+                <input style={inputStyle} value={content.pricing.filmroom.yearlyPrice}
+                  onChange={e => update('pricing.filmroom.yearlyPrice', e.target.value)} />
               </div>
               <div>
+                <label style={labelStyle}>Monthly Price (e.g. +$3/mo)</label>
+                <input style={inputStyle} value={content.pricing.filmroom.monthlyPrice}
+                  onChange={e => update('pricing.filmroom.monthlyPrice', e.target.value)} />
+              </div>
+              <div style={{ gridColumn: '1/-1' }}>
                 <label style={labelStyle}>Label</label>
                 <input style={inputStyle} value={content.pricing.filmroom.label}
                   onChange={e => update('pricing.filmroom.label', e.target.value)} />
@@ -394,7 +460,7 @@ export default function SuperAdmin() {
       })
       await fetchAll()
       setShowInviteModal(false)
-      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
+      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
     } catch (err) { console.error(err) }
     finally { setSaving(false) }
   }
@@ -509,8 +575,8 @@ export default function SuperAdmin() {
             <div className="card">
               <div className="card-header"><span className="card-title">Orgs by Tier</span></div>
               <div className="card-body">
-                {['Starter','Pro','Elite'].map(tier => {
-                  const count = orgs.filter(o => (o.tier||'Starter') === tier).length
+                {['Rookie','Varsity','Pro'].map(tier => {
+                  const count = orgs.filter(o => (o.tier||'Rookie') === tier).length
                   const tc = TIER_COLORS[tier]
                   const revenue = count * TIER_PRICES[tier]
                   return (
@@ -608,7 +674,7 @@ export default function SuperAdmin() {
                             <div className="form-label" style={{ marginBottom:4 }}>Tier</div>
                             <select className="filter-select" style={{ width:'100%', fontSize:12 }}
                               value={tier} onChange={e => updateOrg(org.id, { tier: e.target.value })}>
-                              {['Starter','Pro','Elite'].map(t => <option key={t} value={t}>{t} — ${TIER_PRICES[t]}/mo</option>)}
+                              {['Rookie','Varsity','Pro'].map(t => <option key={t} value={t}>{t} — ${TIER_PRICES[t]}/yr</option>)}
                             </select>
                           </div>
                           <div>
@@ -787,9 +853,9 @@ export default function SuperAdmin() {
                 <div className="form-group full">
                   <label className="form-label">Subscription Tier</label>
                   <select className="form-select" value={inviteForm.tier} onChange={e => setInviteForm(f=>({...f,tier:e.target.value}))}>
-                    <option value="Starter">Starter — $49/mo</option>
-                    <option value="Pro">Pro — $99/mo</option>
-                    <option value="Elite">Elite — $199/mo</option>
+                    <option value="Rookie">Rookie — Free</option>
+                    <option value="Varsity">Varsity — $150/yr</option>
+                    <option value="Pro">Pro — $350/yr</option>
                   </select>
                 </div>
               </div>

@@ -28,6 +28,7 @@ import Staff       from './pages/Staff'
 import PlayerPortal from './pages/PlayerPortal'
 import SuperAdmin  from './pages/SuperAdmin'
 import FilmRoom    from './pages/FilmRoom'
+import Onboarding  from './pages/Onboarding'
 
 function LoadingScreen() {
   return (
@@ -56,12 +57,15 @@ function RouteGuard({ path, children }) {
 }
 
 export default function App() {
-  const { session, loading, authorized, signOut, role, orgId, orgData } = useAuth()
+  const { session, loading, authorized, signOut, role, orgId, orgData, needsOnboarding } = useAuth()
   const { loading: dataLoading } = useStore()
   const trial = useTrial(orgId)
 
   if (loading || dataLoading) return <LoadingScreen />
   if (!session) return <Login />
+
+  // New user with no org — show onboarding
+  if (authorized && needsOnboarding) return <Onboarding />
 
   if (!authorized) return (
     <div style={{
@@ -71,8 +75,8 @@ export default function App() {
     }}>
       <div style={{ fontFamily:'var(--font-display)', fontSize:42, color:'var(--red)', letterSpacing:2 }}>ACCESS DENIED</div>
       <div style={{ fontSize:14, color:'var(--text3)', maxWidth:400, lineHeight:1.7 }}>
-        Your Google account is not authorized to access Delta Dubs management.
-        Contact your admin to get access.
+        Your account isn't linked to an organization yet.
+        Contact your admin to get access, or sign in with a different account.
       </div>
       <div style={{ fontFamily:'var(--font-mono)', fontSize:11, color:'var(--text3)', marginBottom:8 }}>
         Signed in as: {session.user?.email}

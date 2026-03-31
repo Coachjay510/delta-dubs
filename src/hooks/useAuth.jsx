@@ -10,8 +10,9 @@ export function AuthProvider({ children }) {
   const [teamAccess,   setTeamAccess]   = useState('All Teams')
   const [authorized,   setAuthorized]   = useState(false)
   const [authChecking, setAuthChecking] = useState(false)
-  const [orgId,        setOrgId]        = useState('delta-dubs')
+  const [orgId,        setOrgId]        = useState(null)
   const [orgData,      setOrgData]      = useState(null)
+  const [needsOnboarding, setNeedsOnboarding] = useState(false)
 
   async function fetchOrgData(id) {
     const { data } = await supabase
@@ -25,60 +26,63 @@ export function AuthProvider({ children }) {
   async function fetchRole(userId, email) {
     if (!supabase || !userId) return null
     try {
-      // Check org_users — use limit(1) not single() to avoid throwing on no rows
+      // ── 1. Check org_users for ANY org this user belongs to ──
       const { data: orgUsers } = await supabase
         .from('org_users')
-        .select('role, team_access')
+        .select('role, team_access, org_id')
         .eq('user_id', userId)
-        .eq('org_id', 'delta-dubs')
         .limit(1)
 
       if (orgUsers && orgUsers.length > 0) {
-        const oid = orgUsers[0].org_id || 'delta-dubs'
-        setRole(orgUsers[0].role || 'Volunteer')
-        setTeamAccess(orgUsers[0].team_access || 'All Teams')
-        setOrgId(oid)
-        fetchOrgData(oid)
-        return orgUsers[0].role
+        const ou = orgUsers[0]
+        setRole(ou.role || 'Volunteer')
+        setTeamAccess(ou.team_access || 'All Teams')
+        setOrgId(ou.org_id)
+        fetchOrgData(ou.org_id)
+        return ou.role
       }
 
-      // Fall back to admins table by email
+      // ── 2. Check admins table by email (any org) ──
       const { data: adminRows } = await supabase
         .from('admins')
-        .select('role, team_access')
+        .select('role, team_access, org_id')
         .eq('email', email)
-        .eq('org_id', 'delta-dubs')
         .limit(1)
 
       if (adminRows && adminRows.length > 0) {
         const a = adminRows[0]
         setRole(a.role || 'Coach')
         setTeamAccess(a.team_access || 'All Teams')
+        setOrgId(a.org_id)
+        fetchOrgData(a.org_id)
         await supabase.from('org_users').upsert({
-          org_id: 'delta-dubs', user_id: userId, email,
+          org_id: a.org_id, user_id: userId, email,
           role: a.role, team_access: a.team_access,
         }, { onConflict: 'org_id,user_id' })
         return a.role
       }
 
-      // Check players table by email
+      // ── 3. Check players table by email (any org) ──
       const { data: playerRows } = await supabase
         .from('players')
-        .select('id, team')
+        .select('id, team, org_id')
         .eq('player_email', email)
-        .eq('org_id', 'delta-dubs')
         .limit(1)
 
       if (playerRows && playerRows.length > 0) {
+        const p = playerRows[0]
         setRole('Player')
-        setTeamAccess(playerRows[0].team)
+        setTeamAccess(p.team)
+        setOrgId(p.org_id)
+        fetchOrgData(p.org_id)
         await supabase.from('org_users').upsert({
-          org_id: 'delta-dubs', user_id: userId, email,
-          role: 'Player', team_access: playerRows[0].team,
+          org_id: p.org_id, user_id: userId, email,
+          role: 'Player', team_access: p.team,
         }, { onConflict: 'org_id,user_id' })
         return 'Player'
       }
 
+      // ── 4. No org found → needs onboarding ──
       return null
     } catch (err) {
       console.error('fetchRole error:', err)
@@ -93,12 +97,18 @@ export function AuthProvider({ children }) {
         setTimeout(() => reject(new Error('Auth timeout')), 5000)
       )
       const foundRole = await Promise.race([fetchRole(userId, email), timeoutPromise])
-      if (foundRole) { setAuthorized(true); return true }
-      setAuthorized(false)
-      return false
+      if (foundRole) {
+        setAuthorized(true)
+        setNeedsOnboarding(false)
+        return true
+      }
+      // No org found — send to onboarding
+      setAuthorized(true) // allow render, but show onboarding
+      setNeedsOnboarding(true)
+      setRole('Head Admin') // will be org creator
+      return 'onboarding'
     } catch (err) {
       console.warn('Auth check issue:', err.message)
-      // On timeout or error default to most restrictive role
       setAuthorized(true)
       setRole('Volunteer')
       setTeamAccess('All Teams')
@@ -106,6 +116,15 @@ export function AuthProvider({ children }) {
     } finally {
       setAuthChecking(false)
     }
+  }
+
+  // Called after onboarding creates an org
+  async function completeOnboarding(newOrgId) {
+    setOrgId(newOrgId)
+    setNeedsOnboarding(false)
+    setRole('Head Admin')
+    setTeamAccess('All Teams')
+    fetchOrgData(newOrgId)
   }
 
   useEffect(() => {
@@ -127,6 +146,9 @@ export function AuthProvider({ children }) {
       } else {
         setAuthorized(false)
         setRole(null)
+        setNeedsOnboarding(false)
+        setOrgId(null)
+        setOrgData(null)
         setTeamAccess('All Teams')
       }
     }) ?? { data: null }
@@ -137,19 +159,22 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = () =>
     supabase?.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://delta-dubs.vercel.app/' },
+      options: { redirectTo: window.location.origin },
     })
 
   const signOut = async () => {
     setAuthorized(false)
     setRole(null)
+    setOrgId(null)
+    setOrgData(null)
+    setNeedsOnboarding(false)
     await supabase?.auth.signOut()
   }
 
   return (
     <AuthContext.Provider value={{
       session, user, role, teamAccess, authorized, authChecking,
-      orgId, orgData,
+      orgId, orgData, needsOnboarding, completeOnboarding,
       signInWithGoogle, signOut,
       loading: session === undefined || authChecking,
     }}>

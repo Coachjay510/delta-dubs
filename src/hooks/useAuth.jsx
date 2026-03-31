@@ -137,7 +137,7 @@ export function AuthProvider({ children }) {
   const signInWithGoogle = () =>
     supabase?.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: 'https://delta-dubs.vercel.app/' },
     })
 
   const signOut = async () => {

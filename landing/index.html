@@ -230,6 +230,37 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
   .hero-h1 { font-size:clamp(42px,12vw,72px); }
   .filmroom-layout { gap:40px; }
 }
+
+/* LOGIN BUTTON */
+.nav-login { display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border:1px solid var(--border2); color:var(--text2); font-weight:600; font-size:13px; text-decoration:none; border-radius:4px; transition:all .2s; font-family:var(--font-b); background:transparent; cursor:pointer; }
+.nav-login:hover { border-color:var(--green2); color:var(--green2); }
+.nav-actions { display:flex; align-items:center; gap:10px; }
+
+/* MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; z-index:9999; background:rgba(4,6,10,.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--bg2); border:1px solid var(--border2); border-radius:16px; padding:40px; max-width:480px; width:100%; position:relative; animation:fadeUp .35s ease both; box-shadow:0 32px 80px rgba(0,0,0,.6); }
+.modal-close { position:absolute; top:16px; right:16px; background:none; border:none; color:var(--text3); font-size:20px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:4px; transition:color .2s; }
+.modal-close:hover { color:var(--text); }
+.modal-kicker { font-family:var(--font-m); font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--green2); margin-bottom:12px; }
+.modal-title { font-family:var(--font-d); font-size:32px; line-height:.95; margin-bottom:8px; }
+.modal-sub { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:28px; }
+.modal-form { display:flex; flex-direction:column; gap:14px; }
+.modal-field { display:flex; flex-direction:column; gap:6px; }
+.modal-label { font-size:12px; font-weight:600; color:var(--text2); font-family:var(--font-m); letter-spacing:1px; }
+.modal-input { background:var(--bg3); border:1px solid var(--border2); border-radius:6px; padding:11px 14px; color:var(--text); font-family:var(--font-b); font-size:14px; outline:none; transition:border-color .2s; }
+.modal-input:focus { border-color:var(--green2); }
+.modal-input::placeholder { color:var(--text3); }
+.modal-select { background:var(--bg3); border:1px solid var(--border2); border-radius:6px; padding:11px 14px; color:var(--text); font-family:var(--font-b); font-size:14px; outline:none; transition:border-color .2s; appearance:none; cursor:pointer; }
+.modal-select:focus { border-color:var(--green2); }
+.modal-submit { display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; background:var(--green); color:#000; font-family:var(--font-b); font-weight:800; font-size:15px; border:none; border-radius:6px; cursor:pointer; transition:all .2s; margin-top:4px; }
+.modal-submit:hover { background:var(--green2); box-shadow:0 0 32px var(--green-glow); }
+.modal-submit:disabled { opacity:.5; cursor:not-allowed; }
+.modal-note { text-align:center; font-family:var(--font-m); font-size:10px; color:var(--text3); letter-spacing:1px; margin-top:8px; }
+.modal-success { text-align:center; padding:20px 0; }
+.modal-success-icon { font-size:48px; margin-bottom:16px; }
+.modal-success-title { font-family:var(--font-d); font-size:28px; margin-bottom:8px; color:var(--green2); }
+.modal-success-sub { font-size:14px; color:var(--text2); line-height:1.6; }
 </style>
 </head>
 <body>
@@ -248,7 +279,10 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
     <li><a href="#how">How It Works</a></li>
     <li><a href="#pricing">Pricing</a></li>
   </ul>
-  <a href="#pricing" class="nav-cta">Start Free Trial →</a>
+  <div class="nav-actions">
+    <a href="https://mwefsjrdukmcpijcurqo.supabase.co/auth/v1/authorize?provider=google&redirect_to=https://delta-dubs.vercel.app" class="nav-login">Sign In</a>
+    <a href="#" class="nav-cta" onclick="openTrialModal(event)">Start Free Trial →</a>
+  </div>
 </nav>
 
 <!-- HERO -->
@@ -273,7 +307,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
       <strong>Next Play Sports Media & Management</strong> is the all-in-one platform built exclusively for AAU and high school basketball — roster, payments, film room, stats, and recruiting in one place.
     </p>
     <div class="hero-btns">
-      <a href="#pricing" class="btn-primary">Start 14-Day Free Trial →</a>
+      <a href="#" class="btn-primary" onclick="openTrialModal(event)">Start 14-Day Free Trial →</a>
       <a href="#filmroom" class="btn-secondary">See the Film Room</a>
     </div>
     <div class="hero-trial">
@@ -305,39 +339,6 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
     <div class="marquee-item"><span class="marquee-icon">📱</span><span class="marquee-label">Player Portal</span></div>
     <div class="marquee-item"><span class="marquee-icon">🎬</span><span class="marquee-label">Dual-Camera Sync</span></div>
     <div class="marquee-item"><span class="marquee-icon">☁️</span><span class="marquee-label">Cloud Sync</span></div>
-  </div>
-</div>
-
-<!-- LOGO STRIP -->
-<div class="logo-strip">
-  <div class="logo-strip-inner">
-    <div class="logo-strip-label">Powering AAU organizations</div>
-    <div class="logo-strip-logos">
-      <div class="logo-item">
-        <img src="NP_Main.png" alt="Next Play Sports Media" style="height:64px;width:auto;mix-blend-mode:screen;" />
-      </div>
-      <div style="width:1px;height:48px;background:var(--border);flex-shrink:0;"></div>
-      <div class="logo-item">
-        <div style="font-family:var(--font-d);font-size:20px;color:rgba(255,255,255,.5);letter-spacing:3px;">DELTA DUBS</div>
-        <div class="logo-np-sub">AAU Basketball · Antioch, CA</div>
-      </div>
-      <div class="logo-item">
-        <div style="font-family:var(--font-d);font-size:18px;color:rgba(59,130,246,.6);letter-spacing:3px;">DRIVE</div>
-        <div class="logo-np-sub">15U</div>
-      </div>
-      <div class="logo-item">
-        <div style="font-family:var(--font-d);font-size:18px;color:rgba(238,103,48,.6);letter-spacing:3px;">ENERGY</div>
-        <div class="logo-np-sub">14U</div>
-      </div>
-      <div class="logo-item">
-        <div style="font-family:var(--font-d);font-size:18px;color:rgba(168,85,247,.6);letter-spacing:3px;">PASSION</div>
-        <div class="logo-np-sub">13U</div>
-      </div>
-      <div class="logo-item">
-        <div style="font-family:var(--font-d);font-size:18px;color:rgba(74,222,128,.6);letter-spacing:3px;">POWER</div>
-        <div class="logo-np-sub">12U</div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -508,7 +509,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
           <li>Cloud sync + Google SSO</li>
           <li>Email support</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline">Start Free Trial</a>
+        <button onclick="openTrialModal(event)" class="tier-btn tier-btn-outline">Start Free Trial</button>
       </div>
 
       <div class="tier-card featured">
@@ -524,7 +525,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
           <li>Player portal accounts</li>
           <li>Budget & finance tools</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-solid">Start Free Trial</a>
+        <button onclick="openTrialModal(event)" class="tier-btn tier-btn-solid">Start Free Trial</button>
       </div>
 
       <div class="tier-card">
@@ -540,7 +541,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
           <li>Priority support</li>
           <li>Custom branding</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline" style="border-color:rgba(168,85,247,.3);color:var(--purple);">Start Free Trial</a>
+        <button onclick="openTrialModal(event)" class="tier-btn tier-btn-outline" style="border-color:rgba(168,85,247,.3);color:var(--purple);">Start Free Trial</button>
       </div>
 
     </div>
@@ -553,7 +554,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
         <span>Dual-camera editing, live stat logging, shot chart, graphic overlays, and FFmpeg export. Mac now · Windows Q2 2026.</span>
       </div>
       <div class="filmroom-tier-price">+$20<span style="font-size:13px;font-weight:400;color:var(--text3)">/mo</span></div>
-      <a href="https://delta-dubs.vercel.app" class="filmroom-tier-btn">Add to Plan</a>
+      <button onclick="openTrialModal(event)" class="filmroom-tier-btn">Add to Plan</button>
     </div>
 
     <p class="reveal" style="text-align:center;margin-top:20px;font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:1px;">
@@ -570,7 +571,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
       <p class="cta-sub">
         Start your free 14-day trial today. No credit card. No setup fee. Your org could be live in the next 5 minutes.
       </p>
-      <a href="https://delta-dubs.vercel.app" class="cta-btn">Start Free Trial →</a>
+      <button onclick="openTrialModal(event)" class="cta-btn">Start Free Trial →</button>
       <div class="cta-note">
         Questions? <a href="mailto:nextplaysports.ca@gmail.com">nextplaysports.ca@gmail.com</a> · Typically responds within 24 hours
       </div>
@@ -592,6 +593,51 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
   </div>
 </footer>
 
+<!-- TRIAL MODAL -->
+<div class="modal-overlay" id="trialModal" onclick="handleOverlayClick(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeTrialModal()">✕</button>
+    <div id="modalForm">
+      <div class="modal-kicker">// Free Trial</div>
+      <div class="modal-title">START YOUR<br><span style="color:var(--green2)">14-DAY TRIAL</span></div>
+      <p class="modal-sub">No credit card required. We'll reach out to get your org set up within 24 hours.</p>
+      <form class="modal-form" id="trialForm">
+        <div class="modal-field">
+          <label class="modal-label" for="orgName">Organization Name</label>
+          <input class="modal-input" type="text" id="orgName" name="orgName" placeholder="e.g. Delta Dubs Basketball" required />
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="contactName">Your Name</label>
+          <input class="modal-input" type="text" id="contactName" name="contactName" placeholder="Coach Jay" required />
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="email">Email Address</label>
+          <input class="modal-input" type="email" id="email" name="email" placeholder="you@yourorg.com" required />
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="plan">Interested Plan</label>
+          <select class="modal-select" id="plan" name="plan">
+            <option value="Starter">Starter — $29/mo</option>
+            <option value="Pro" selected>Pro — $79/mo (Most Popular)</option>
+            <option value="Elite">Elite — $149/mo</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="teamCount">How many teams?</label>
+          <input class="modal-input" type="text" id="teamCount" name="teamCount" placeholder="e.g. 4 teams, ~60 players" />
+        </div>
+        <button type="submit" class="modal-submit" id="submitBtn">Request Free Trial →</button>
+        <div class="modal-note">14 days free · No credit card · We'll set everything up</div>
+      </form>
+    </div>
+    <div id="modalSuccess" class="modal-success" style="display:none;">
+      <div class="modal-success-icon">🏀</div>
+      <div class="modal-success-title">YOU'RE IN!</div>
+      <p class="modal-success-sub">We got your request and will reach out within 24 hours to get your org set up. Check your inbox at <span id="successEmail" style="color:var(--green2);"></span></p>
+    </div>
+  </div>
+</div>
+
 <script>
 // Scroll progress line
 const sline = document.getElementById('sline')
@@ -606,6 +652,57 @@ const obs = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target) } })
 }, { threshold: 0.1 })
 reveals.forEach(r => obs.observe(r))
+
+// Modal
+function openTrialModal(e) {
+  if (e) e.preventDefault()
+  document.getElementById('trialModal').classList.add('open')
+  document.body.style.overflow = 'hidden'
+}
+function closeTrialModal() {
+  document.getElementById('trialModal').classList.remove('open')
+  document.body.style.overflow = ''
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('trialModal')) closeTrialModal()
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTrialModal() })
+
+// Form submit via Formspree
+document.getElementById('trialForm').addEventListener('submit', async function(e) {
+  e.preventDefault()
+  const btn = document.getElementById('submitBtn')
+  btn.disabled = true
+  btn.textContent = 'Sending...'
+  const email = document.getElementById('email').value
+  const data = {
+    orgName: document.getElementById('orgName').value,
+    contactName: document.getElementById('contactName').value,
+    email,
+    plan: document.getElementById('plan').value,
+    teamCount: document.getElementById('teamCount').value,
+  }
+  try {
+    const res = await fetch('https://formspree.io/f/mzdkrloy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(data)
+    })
+    if (res.ok) {
+      document.getElementById('modalForm').style.display = 'none'
+      document.getElementById('successEmail').textContent = email
+      document.getElementById('modalSuccess').style.display = 'block'
+    } else {
+      btn.disabled = false
+      btn.textContent = 'Request Free Trial →'
+      alert('Something went wrong. Please email us at nextplaysports.ca@gmail.com')
+    }
+  } catch {
+    btn.disabled = false
+    btn.textContent = 'Request Free Trial →'
+    alert('Something went wrong. Please email us at nextplaysports.ca@gmail.com')
+  }
+})
 </script>
 </body>
 </html>

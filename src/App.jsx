@@ -57,7 +57,7 @@ function RouteGuard({ path, children }) {
 }
 
 export default function App() {
-  const { session, loading, authorized, signOut, role, orgId, orgData, needsOnboarding } = useAuth()
+  const { session, loading, authorized, signOut, role, orgId, orgData, needsOnboarding, isSuperAdmin } = useAuth()
   const { loading: dataLoading } = useStore()
   const trial = useTrial(orgId)
 
@@ -85,8 +85,7 @@ export default function App() {
     </div>
   )
 
-  // Super admins bypass trial checks
-  const isSuperAdmin = session.user?.email === 'nextplaysports.ca@gmail.com'
+  // Super admins bypass trial checks (from context)
 
   // Paywall — trial expired and not paid (skip for super admin)
   if (!isSuperAdmin && !trial.loading && trial.isTrialExpired && !trial.isPaid) {

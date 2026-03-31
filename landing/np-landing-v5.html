@@ -172,7 +172,7 @@ section { padding:clamp(60px,8vw,120px) clamp(20px,5vw,64px); }
 .step-desc { font-size:14px; color:var(--text2); line-height:1.6; }
 
 /* PRICING */
-.tiers-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-top:56px; }
+.tiers-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:56px; }
 .tier-card { background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:32px 28px; position:relative; overflow:hidden; transition:transform .2s; display:flex; flex-direction:column; }
 .tier-card:hover { transform:translateY(-4px); }
 .tier-card.featured { border-color:var(--green-mid); background:linear-gradient(135deg,rgba(92,184,0,.06),var(--bg2)); }
@@ -496,19 +496,35 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
     <div class="tiers-grid reveal">
 
       <div class="tier-card">
+        <div class="tier-name" style="color:var(--green2);">FREE</div>
+        <div class="tier-price" style="color:var(--green2);">$0</div>
+        <div class="tier-period">forever</div>
+        <div class="tier-savings">No credit card · Sign up instantly</div>
+        <ul class="tier-features">
+          <li>1 team, up to 15 players</li>
+          <li>Roster + schedule + attendance</li>
+          <li>Basic player profiles</li>
+          <li>Cloud sync + Google SSO</li>
+          <li>Player portal</li>
+          <li>Email support</li>
+        </ul>
+        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-solid">Create Free Account →</a>
+      </div>
+
+      <div class="tier-card">
         <div class="tier-name">STARTER</div>
         <div class="tier-price" style="color:var(--green2);">$29</div>
         <div class="tier-period">per month</div>
         <div class="tier-savings">$290/yr — save 2 months</div>
         <ul class="tier-features">
-          <li>1 team, up to 15 players</li>
-          <li>Roster + schedule + attendance</li>
+          <li>Everything in Free</li>
+          <li>Up to 2 teams, 30 players</li>
           <li>Payment tracking</li>
-          <li>Basic player profiles</li>
-          <li>Cloud sync + Google SSO</li>
-          <li>Email support</li>
+          <li>Stats + recruiting profiles</li>
+          <li>Budget & finance tools</li>
+          <li>Priority support</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline">Start Free Trial</a>
+        <a href="mailto:nextplaysports.ca@gmail.com?subject=Starter Plan Request" class="tier-btn tier-btn-outline">Request Access</a>
       </div>
 
       <div class="tier-card featured">
@@ -519,12 +535,12 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
         <ul class="tier-features">
           <li>Up to 4 teams, 60 players</li>
           <li>Everything in Starter</li>
-          <li>Stats + recruiting profiles</li>
           <li>Film Room access</li>
           <li>Player portal accounts</li>
-          <li>Budget & finance tools</li>
+          <li>College recruiting</li>
+          <li>Dedicated onboarding</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-solid">Start Free Trial</a>
+        <a href="mailto:nextplaysports.ca@gmail.com?subject=Pro Plan Request" class="tier-btn tier-btn-outline">Request Access</a>
       </div>
 
       <div class="tier-card">
@@ -540,7 +556,7 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
           <li>Priority support</li>
           <li>Custom branding</li>
         </ul>
-        <a href="https://delta-dubs.vercel.app" class="tier-btn tier-btn-outline" style="border-color:rgba(168,85,247,.3);color:var(--purple);">Start Free Trial</a>
+        <a href="mailto:nextplaysports.ca@gmail.com?subject=Elite Plan Request" class="tier-btn tier-btn-outline" style="border-color:rgba(168,85,247,.3);color:var(--purple);">Request Access</a>
       </div>
 
     </div>
@@ -553,11 +569,11 @@ footer { border-top:1px solid var(--border); padding:32px clamp(20px,5vw,64px); 
         <span>Dual-camera editing, live stat logging, shot chart, graphic overlays, and FFmpeg export. Mac now · Windows Q2 2026.</span>
       </div>
       <div class="filmroom-tier-price">+$20<span style="font-size:13px;font-weight:400;color:var(--text3)">/mo</span></div>
-      <a href="https://delta-dubs.vercel.app" class="filmroom-tier-btn">Add to Plan</a>
+      <a href="mailto:nextplaysports.ca@gmail.com?subject=Film Room Add-on" class="filmroom-tier-btn">Request Access</a>
     </div>
 
     <p class="reveal" style="text-align:center;margin-top:20px;font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:1px;">
-      All plans include a 14-day free trial · No credit card required · Cancel anytime · Annual billing saves 2 months
+      Free plan — sign up instantly · Paid plans by invite · Film Room add-on available on Starter and above
     </p>
   </div>
 </section>

@@ -102,7 +102,7 @@ export default function Onboarding() {
       const { error: orgErr } = await supabase.from('orgs').insert({
         id: orgId, name: orgName.trim(),
         city: orgCity.trim() || null, state: orgState.trim() || null,
-        type: orgType, status: 'trial', tier: 'Pro',
+        type: orgType, status: 'trial', tier: 'Free',
         trial_started_at: new Date().toISOString(),
       })
       if (orgErr) throw orgErr
@@ -165,8 +165,8 @@ export default function Onboarding() {
 
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg)', display:'flex', alignItems:'center',
-      justifyContent:'center', padding:'24px', fontFamily:'var(--font-b)' }}>
-      <div style={{ width:'100%', maxWidth:560 }}>
+      justifyContent:'center', padding:'24px', fontFamily:'var(--font-b)', overflowY:'auto' }}>
+      <div style={{ width:'100%', maxWidth:520, margin:'0 auto' }}>
 
         <div style={{ textAlign:'center', marginBottom:32 }}>
           <div style={{ fontFamily:'var(--font-d)', fontSize:32, color:'var(--green2)', letterSpacing:3 }}>NP</div>
@@ -191,15 +191,13 @@ export default function Onboarding() {
                 <input className="form-input" placeholder="e.g. Bay Area Elite, Delta Dubs AAU"
                   value={orgName} onChange={e => setOrgName(e.target.value)} autoFocus/>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 80px', gap:12, marginBottom:16 }}>
-                <div>
-                  <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:6 }}>City</label>
-                  <input className="form-input" placeholder="Antioch" value={orgCity} onChange={e => setOrgCity(e.target.value)}/>
-                </div>
-                <div>
-                  <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:6 }}>State</label>
-                  <input className="form-input" placeholder="CA" maxLength={2} value={orgState} onChange={e => setOrgState(e.target.value.toUpperCase())}/>
-                </div>
+              <div style={{ marginBottom:16 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:6 }}>City</label>
+                <input className="form-input" placeholder="Antioch" value={orgCity} onChange={e => setOrgCity(e.target.value)}/>
+              </div>
+              <div style={{ marginBottom:16 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:6 }}>State</label>
+                <input className="form-input" placeholder="CA" maxLength={2} value={orgState} onChange={e => setOrgState(e.target.value.toUpperCase())} style={{ width:80 }}/>
               </div>
               <div>
                 <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:8 }}>Organization Type</label>
@@ -353,7 +351,7 @@ export default function Onboarding() {
                   <div><span style={{ color:'var(--text3)' }}>Type:</span> {orgType}</div>
                   <div><span style={{ color:'var(--text3)' }}>Teams:</span> {teams.filter(t=>t.name).map(t=>t.name).join(', ')||'None'}</div>
                   <div><span style={{ color:'var(--text3)' }}>Roster:</span> {rosterPlayers.length > 0 ? `${rosterPlayers.length} players from import` : 'Add manually after setup'}</div>
-                  <div><span style={{ color:'var(--text3)' }}>Plan:</span> <span style={{ color:'var(--green2)' }}>Pro — 14-day free trial</span></div>
+                  <div><span style={{ color:'var(--text3)' }}>Plan:</span> <span style={{ color:'var(--green2)' }}>Free — upgrade anytime</span></div>
                 </div>
               </div>
               {error && (
@@ -383,7 +381,7 @@ export default function Onboarding() {
           )}
         </div>
         <div style={{ textAlign:'center', marginTop:14, fontSize:12, color:'var(--text3)' }}>
-          14-day free trial · No credit card required
+          Free plan · No credit card required · Upgrade anytime
         </div>
       </div>
     </div>

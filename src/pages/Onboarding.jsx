@@ -149,7 +149,6 @@ export default function Onboarding() {
       setLoading(false)
     }
   }
-  }
 
   const stepBar = (
     <div style={{ display:'flex', gap:0, marginBottom:32 }}>

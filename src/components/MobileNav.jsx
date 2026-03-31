@@ -11,11 +11,10 @@ const NAV_ITEMS = [
 
 export default function MobileNav() {
   const { canAccess } = usePermissions()
-
   const visible = NAV_ITEMS.filter(item => canAccess(item.to))
 
   return (
-    <nav className="mobile-nav">
+    <nav className="mobile-nav" style={{ display: 'none' }}>
       {visible.map(item => (
         <NavLink
           key={item.to}

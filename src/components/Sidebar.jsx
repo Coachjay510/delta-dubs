@@ -30,7 +30,7 @@ const NAV = [
 
 export default function Sidebar() {
   const { players, syncStatus, syncToSupabase } = useStore()
-  const { user, signOut, role, teamAccess }      = useAuth()
+  const { user, signOut, role, teamAccess, orgData } = useAuth()
   const { canAccess }                            = usePermissions()
 
   const outstanding = players.filter(p => p.status === 'On Roster' && (p.balance || 0) > 0).length
@@ -45,7 +45,7 @@ export default function Sidebar() {
   }[role] || '#4e576e'
 
   return (
-    <aside className={styles.sidebar} style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+    <aside className={styles.sidebar}>
       <div className={styles.logo}>
         <div className={styles.logoMark}>NP</div>
         <div className={styles.logoText}>
@@ -56,7 +56,7 @@ export default function Sidebar() {
 
       <div className={styles.orgPill}>
         <span className={styles.orgDot} />
-        <span className={styles.orgName}>Delta Dubs</span>
+        <span className={styles.orgName}>{orgData?.name || 'My Org'}</span>
         <span className={styles.orgTag}>AAU Org</span>
       </div>
 
@@ -70,7 +70,6 @@ export default function Sidebar() {
           display: 'flex',
           alignItems: 'center',
           gap: 7,
-          flexShrink: 0,
         }}>
           <span style={{ fontSize:9, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color: roleColor }}>
             {role}
@@ -81,8 +80,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Scrollable nav */}
-      <nav className={styles.nav} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+      <nav className={styles.nav}>
         {NAV.map((item, i) => {
           if (item.section) return (
             <div key={i} className={styles.section}>{item.section}</div>
@@ -111,8 +109,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer always visible at bottom */}
-      <div className={styles.footer} style={{ flexShrink: 0 }}>
+      <div className={styles.footer}>
         {user && (
           <div className={styles.userRow}>
             <div className={styles.userAvatar}>
@@ -126,7 +123,7 @@ export default function Sidebar() {
           Sign Out
         </button>
         <div className={styles.footerMeta}>
-          <span className={styles.ein}>EIN: 92-3031048</span>
+          {orgData?.name && <span className={styles.ein}>{orgData.name}</span>}
         </div>
       </div>
     </aside>

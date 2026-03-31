@@ -112,10 +112,10 @@ export default function Onboarding() {
       if (validTeams.length > 0) {
         await supabase.from('teams').insert(
           validTeams.map(t => ({ org_id: orgId, name: t.name.trim(), age_group: t.ageGroup, color: t.color }))
-        )
+        ).catch(e => console.warn('Teams insert:', e))
       }
 
-      // 3. Import roster players
+      // 3. Import roster
       if (rosterPlayers.length > 0 && !importSkip) {
         const playerRows = rosterPlayers.map(p => ({
           org_id: orgId, name: p.name, team: p.team || (validTeams[0]?.name || ''),
@@ -123,7 +123,7 @@ export default function Onboarding() {
           email: p.email || null, phone: p.phone || null,
           status: 'On Roster', balance: 0, is_new: false,
         }))
-        await supabase.from('players').insert(playerRows)
+        await supabase.from('players').insert(playerRows).catch(e => console.warn('Players insert:', e))
       }
 
       // 4. Create admin record
@@ -131,20 +131,24 @@ export default function Onboarding() {
       await supabase.from('admins').insert({
         org_id: orgId, fname: nameParts[0], lname: nameParts.slice(1).join(' ') || '',
         email: user.email, role: 'Head Admin', team_access: 'All Teams', title: adminTitle,
-      })
+      }).catch(e => console.warn('Admin insert:', e))
 
-      // 5. Create org_users record
-      await supabase.from('org_users').insert({
+      // 5. Create org_users — use upsert to avoid conflicts
+      await supabase.from('org_users').upsert({
         org_id: orgId, user_id: user.id, email: user.email,
         role: 'Head Admin', team_access: 'All Teams',
-      })
+      }, { onConflict: 'org_id,user_id' }).catch(e => console.warn('org_users upsert:', e))
 
+      // Small delay to let Supabase auth settle before transitioning
+      await new Promise(r => setTimeout(r, 500))
       await completeOnboarding(orgId)
+
     } catch (err) {
       console.error('Onboarding error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
       setLoading(false)
     }
+  }
   }
 
   const stepBar = (

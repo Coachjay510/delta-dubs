@@ -164,9 +164,9 @@ export default function Onboarding() {
   )
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg)', display:'flex', alignItems:'center',
-      justifyContent:'center', padding:'24px', fontFamily:'var(--font-b)', overflowY:'auto' }}>
-      <div style={{ width:'100%', maxWidth:520, margin:'0 auto' }}>
+    <div style={{ minHeight:'100vh', width:'100%', background:'var(--bg)', display:'flex', alignItems:'center',
+      justifyContent:'center', padding:'40px 24px', fontFamily:'var(--font-b)', overflowY:'auto' }}>
+      <div style={{ width:'100%', maxWidth:520 }}>
 
         <div style={{ textAlign:'center', marginBottom:32 }}>
           <div style={{ fontFamily:'var(--font-d)', fontSize:32, color:'var(--green2)', letterSpacing:3 }}>NP</div>

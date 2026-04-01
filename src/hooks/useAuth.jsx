@@ -107,6 +107,21 @@ export function AuthProvider({ children }) {
 
   async function checkAuthorization(userId, email) {
     setAuthChecking(true)
+
+    // Super admin impersonating another org via ?impersonate= param
+    const params = new URLSearchParams(window.location.search)
+    const impersonateOrg = params.get('impersonate')
+    if (email === SUPER_ADMIN && impersonateOrg) {
+      console.log('[useAuth] super admin impersonating:', impersonateOrg)
+      setOrgId(impersonateOrg)
+      setRole('Head Admin')
+      setTeamAccess('All Teams')
+      setAuthorized(true)
+      setNeedsOnboarding(false)
+      fetchOrgData(impersonateOrg)
+      setAuthChecking(false)
+      return
+    }
     try {
       const result = await Promise.race([
         resolveUserOrg(userId, email),
@@ -139,6 +154,8 @@ export function AuthProvider({ children }) {
   }
 
   async function completeOnboarding(newOrgId) {
+    // Wait for any pending auth operations to settle
+    await new Promise(r => setTimeout(r, 600))
     setOrgId(newOrgId)
     setNeedsOnboarding(false)
     setRole('Head Admin')

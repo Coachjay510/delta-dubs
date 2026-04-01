@@ -54,14 +54,25 @@ export default function SuperAdmin() {
 
   // Landing page editor
   const [landingSettings, setLandingSettings] = useState({
-    landing_hero_title:    'RUN YOUR AAU ORG DIFFERENTLY',
-    landing_hero_sub:      'The all-in-one platform built for AAU basketball organizations.',
-    landing_cta_text:      'Start Free Trial',
-    landing_cta_url:       'https://nextplaymm.vercel.app',
-    landing_email:         'nextplaysports.ca@gmail.com',
-    landing_filmroom_price:'+$30/yr',
+    landing_hero_title:      'RUN YOUR AAU ORG DIFFERENTLY',
+    landing_hero_sub:        'The all-in-one platform built for AAU basketball organizations.',
+    landing_cta_text:        'Start Free Trial',
+    landing_cta_url:         'https://nextplaymm.vercel.app',
+    landing_email:           'nextplaysports.ca@gmail.com',
+    landing_filmroom_price:  '+$30/yr',
+    landing_primary_color:   '#5cb800',
+    landing_accent_color:    '#7ae600',
+    landing_logo_main_url:   '',
+    landing_logo_icon_url:   '',
+    landing_logo_font_url:   '',
+    landing_logo_main_size:  '120',
+    landing_logo_icon_size:  '80',
+    login_logo_size:         '52',
+    login_bg_color:          '#04060a',
+    login_card_color:        '#080c12',
   })
-  const [landingSaving, setLandingSaving] = useState(false)
+  const [landingSaving,   setLandingSaving]   = useState(false)
+  const [uploadingLogo,   setUploadingLogo]   = useState(null)
   const [inviteForm, setInviteForm] = useState({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
   const [newSuperEmail, setNewSuperEmail] = useState('')
   const [saving, setSaving]         = useState(false)
@@ -82,14 +93,42 @@ export default function SuperAdmin() {
   async function fetchLoginSettings() {
     const { data } = await supabase.from('platform_settings')
       .select('key, value')
-      .in('key', ['login_heading','login_subheading','login_tagline','login_footer',
-                  'landing_hero_title','landing_hero_sub','landing_cta_text','landing_cta_url',
-                  'landing_email','landing_filmroom_price'])
+      .in('key', [
+        'login_heading','login_subheading','login_tagline','login_footer',
+        'landing_hero_title','landing_hero_sub','landing_cta_text','landing_cta_url',
+        'landing_email','landing_filmroom_price','landing_primary_color','landing_accent_color',
+        'landing_logo_main_url','landing_logo_icon_url','landing_logo_font_url',
+        'landing_logo_main_size','landing_logo_icon_size',
+        'login_logo_size','login_bg_color','login_card_color',
+      ])
     if (data?.length) {
       const map = {}
       data.forEach(r => { map[r.key] = r.value })
       setLoginSettings(prev => ({ ...prev, ...map }))
       setLandingSettings(prev => ({ ...prev, ...map }))
+    }
+  }
+
+  async function uploadLogo(file, key) {
+    if (!file) return
+    setUploadingLogo(key)
+    try {
+      const ext  = file.name.split('.').pop()
+      const path = `logos/${key}-${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('platform-assets')
+        .upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('platform-assets').getPublicUrl(path)
+      const url = data.publicUrl
+      setLandingSettings(prev => ({ ...prev, [key]: url }))
+      // auto-save this key
+      await supabase.from('platform_settings').upsert({ key, value: url }, { onConflict: 'key' })
+      alert(`Logo uploaded! URL saved. Redeploy landing page to see it.`)
+    } catch(e) {
+      alert('Upload failed: ' + e.message + '\n\nMake sure you have a "platform-assets" storage bucket in Supabase with public access.')
+    } finally {
+      setUploadingLogo(null)
     }
   }
 
@@ -393,7 +432,7 @@ export default function SuperAdmin() {
                               setEmailSubject(`Message from Next Play — ${org.name}`)
                             }}>📧 Email Org</button>
                             <button className="btn btn-secondary btn-sm"
-                              onClick={() => window.open(`${window.location.origin}?impersonate=${org.id}`, '_blank')}>
+                              onClick={() => window.location.href = `${window.location.origin}?impersonate=${org.id}`}>
                               👁 View as Org
                             </button>
                           </div>
@@ -618,29 +657,124 @@ export default function SuperAdmin() {
           <div style={{ borderTop:'1px solid var(--border2)', paddingTop:28, marginTop:8 }}>
             <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:6 }}>Landing Page Editor</div>
             <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>
-              Edit key text and links on the public marketing page. After saving, redeploy the landing folder for changes to appear.
+              Edit text, colors, logos, and layout. Save here — redeploy the landing folder once to apply all changes.
             </div>
+
+            {/* LOGOS */}
+            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:2, color:'var(--text3)', textTransform:'uppercase', marginBottom:12 }}>// Logos</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:20 }}>
+              {[
+                { key:'landing_logo_main_url',  label:'Main Logo (hero)',    sizeKey:'landing_logo_main_size',  placeholder:'https://...' },
+                { key:'landing_logo_icon_url',  label:'Icon Logo (nav)',     sizeKey:'landing_logo_icon_size',  placeholder:'https://...' },
+                { key:'landing_logo_font_url',  label:'Font Logo (footer)',  sizeKey:null,                      placeholder:'https://...' },
+              ].map(({ key, label, sizeKey, placeholder }) => (
+                <div key={key} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:12 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)', marginBottom:8 }}>{label}</div>
+                  {/* Preview */}
+                  {landingSettings[key] && (
+                    <img src={landingSettings[key]} alt={label}
+                      style={{ width:'100%', height:60, objectFit:'contain', marginBottom:8,
+                        filter:'brightness(0) invert(1)', mixBlendMode:'screen' }}/>
+                  )}
+                  {/* Upload */}
+                  <label style={{ display:'block', marginBottom:6 }}>
+                    <div style={{ background:'var(--np-green-dim)', border:'1px solid var(--np-green-mid)',
+                      borderRadius:6, padding:'6px 10px', fontSize:11, color:'var(--np-green2)',
+                      cursor:'pointer', textAlign:'center', fontWeight:600 }}>
+                      {uploadingLogo===key ? 'Uploading…' : '⬆️ Upload Image'}
+                    </div>
+                    <input type="file" accept="image/*" style={{ display:'none' }}
+                      onChange={e => uploadLogo(e.target.files?.[0], key)} disabled={!!uploadingLogo}/>
+                  </label>
+                  {/* Or paste URL */}
+                  <input className="form-input" placeholder={placeholder} style={{ fontSize:11 }}
+                    value={landingSettings[key] || ''}
+                    onChange={e => setLandingSettings(p => ({ ...p, [key]: e.target.value }))}/>
+                  {/* Size */}
+                  {sizeKey && (
+                    <div style={{ marginTop:8 }}>
+                      <div style={{ fontSize:10, color:'var(--text3)', marginBottom:4 }}>Size (px): {landingSettings[sizeKey] || '120'}</div>
+                      <input type="range" min="40" max="300"
+                        value={landingSettings[sizeKey] || '120'}
+                        onChange={e => setLandingSettings(p => ({ ...p, [sizeKey]: e.target.value }))}
+                        style={{ width:'100%' }}/>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* COLORS */}
+            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:2, color:'var(--text3)', textTransform:'uppercase', marginBottom:12 }}>// Colors</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:20 }}>
+              {[
+                { key:'landing_primary_color', label:'Primary Green',  defaultVal:'#5cb800' },
+                { key:'landing_accent_color',  label:'Accent Green',   defaultVal:'#7ae600' },
+                { key:'login_bg_color',         label:'Login BG',       defaultVal:'#04060a' },
+                { key:'login_card_color',       label:'Login Card',     defaultVal:'#080c12' },
+              ].map(({ key, label, defaultVal }) => (
+                <div key={key} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:12 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)', marginBottom:8 }}>{label}</div>
+                  <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                    <input type="color"
+                      value={landingSettings[key] || defaultVal}
+                      onChange={e => setLandingSettings(p => ({ ...p, [key]: e.target.value }))}
+                      style={{ width:40, height:32, border:'none', borderRadius:4, cursor:'pointer', background:'none' }}/>
+                    <input className="form-input" style={{ fontSize:12, flex:1 }}
+                      value={landingSettings[key] || defaultVal}
+                      onChange={e => setLandingSettings(p => ({ ...p, [key]: e.target.value }))}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* LOGIN LOGO SIZE */}
+            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:2, color:'var(--text3)', textTransform:'uppercase', marginBottom:12 }}>// Login Page Layout</div>
+            <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:16, marginBottom:20 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                <div>
+                  <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>Logo Size on Login (px): {landingSettings.login_logo_size || '52'}</div>
+                  <input type="range" min="24" max="120"
+                    value={landingSettings.login_logo_size || '52'}
+                    onChange={e => setLandingSettings(p => ({ ...p, login_logo_size: e.target.value }))}
+                    style={{ width:'100%' }}/>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  <div style={{
+                    width: Number(landingSettings.login_logo_size||52), height: Number(landingSettings.login_logo_size||52),
+                    borderRadius: '50%', background:'var(--np-green-dim)', border:'1px solid var(--np-green-mid)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                    fontFamily:'var(--font-display)', fontSize: Math.max(12, Number(landingSettings.login_logo_size||52)/2.5),
+                    color:'var(--np-green2)', flexShrink:0,
+                  }}>NP</div>
+                  <div style={{ fontSize:11, color:'var(--text3)' }}>Preview</div>
+                </div>
+              </div>
+            </div>
+
+            {/* TEXT */}
+            <div style={{ fontFamily:'var(--font-mono)', fontSize:10, letterSpacing:2, color:'var(--text3)', textTransform:'uppercase', marginBottom:12 }}>// Text Content</div>
             {[
               { key:'landing_hero_title',     label:'Hero Title',         placeholder:'RUN YOUR AAU ORG DIFFERENTLY' },
               { key:'landing_hero_sub',        label:'Hero Subheading',    placeholder:'The all-in-one platform...' },
               { key:'landing_cta_text',        label:'CTA Button Text',    placeholder:'Start Free Trial' },
               { key:'landing_cta_url',         label:'CTA Button URL',     placeholder:'https://nextplaymm.vercel.app' },
               { key:'landing_email',           label:'Contact Email',       placeholder:'nextplaysports.ca@gmail.com' },
-              { key:'landing_filmroom_price',  label:'Film Room Add-on Price', placeholder:'+$30/yr' },
+              { key:'landing_filmroom_price',  label:'Film Room Price',     placeholder:'+$30/yr' },
             ].map(field => (
-              <div key={field.key} className="form-group" style={{ marginBottom:14 }}>
+              <div key={field.key} className="form-group" style={{ marginBottom:12 }}>
                 <label className="form-label">{field.label}</label>
                 <input className="form-input" placeholder={field.placeholder}
                   value={landingSettings[field.key] || ''}
-                  onChange={e => setLandingSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
-                />
+                  onChange={e => setLandingSettings(prev => ({ ...prev, [field.key]: e.target.value }))}/>
               </div>
             ))}
+
             <div style={{ background:'rgba(92,184,0,.06)', border:'1px solid rgba(92,184,0,.2)', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:12, color:'var(--text2)' }}>
-              💡 To make landing page changes fully live without a redeploy, connect <code>landing/index.html</code> to fetch from Supabase <code>platform_settings</code> on load.
+              💡 To use logos on landing page without redeploy — connect <code>landing/index.html</code> to fetch from Supabase <code>platform_settings</code> on load. Or just redeploy after saving.
             </div>
             <button className="btn btn-primary" onClick={saveLandingSettings} disabled={landingSaving}>
-              {landingSaving ? 'Saving…' : '💾 Save Landing Page'}
+              {landingSaving ? 'Saving…' : '💾 Save Landing Settings'}
             </button>
           </div>
 

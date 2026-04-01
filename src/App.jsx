@@ -116,6 +116,26 @@ export default function App() {
         flexDirection: 'column',
         minHeight: '100vh',
       }}>
+        {/* Impersonate banner — super admin viewing another org */}
+        {isSuperAdmin && new URLSearchParams(window.location.search).get('impersonate') && (
+          <div style={{
+            background:'rgba(168,85,247,.12)', borderBottom:'1px solid rgba(168,85,247,.3)',
+            padding:'6px 20px', display:'flex', alignItems:'center', gap:12, flexShrink:0,
+          }}>
+            <span style={{ fontSize:12, color:'#a855f7', fontWeight:700 }}>
+              👁 Viewing as: {orgData?.name || new URLSearchParams(window.location.search).get('impersonate')}
+            </span>
+            <span style={{ fontSize:12, color:'var(--text3)' }}>Super Admin view</span>
+            <div style={{ flex:1 }}/>
+            <button onClick={() => window.location.href = window.location.origin + '/superadmin'}
+              style={{ background:'transparent', border:'1px solid rgba(168,85,247,.4)',
+                color:'#a855f7', borderRadius:6, padding:'4px 14px',
+                fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              ← Exit Org View
+            </button>
+          </div>
+        )}
+
         {/* Trial/Free banner */}
         {!isSuperAdmin && (trial.showBanner || trial.tier === 'Rookie' || trial.tier === 'Free') && (
           <TrialBanner

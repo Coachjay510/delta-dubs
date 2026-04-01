@@ -556,9 +556,7 @@ export default function SuperAdmin() {
         </div>
       )}
 
-      {/* ── ADD SUPER ADMIN MODAL ── */}
-      {/* ── LOGIN EDITOR TAB ── */}
-      {tab === 'logineditor' && (
+      {!loading && tab === 'logineditor' && (
         <div style={{ maxWidth:600 }}>
           <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:6 }}>Login Page Editor</div>
           <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>

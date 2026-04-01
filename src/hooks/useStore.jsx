@@ -91,7 +91,7 @@ export function StoreProvider({ children }) {
       setMessagesRaw((m || []).map(x => ({ ...x, to: x.to_team })))
       setAdminsRaw(a || [])
       setHistoryRaw((h || []).map(x => ({ ...x, date: x.archived_at, playerCount: x.player_count })))
-      setOrgTeams((teams || []).map(t => ({ id: t.name, label: t.name, age: t.age_group, color: t.color || '#3b82f6' })))
+      setOrgTeams((teams || []).map(t => ({ dbId: t.id, id: t.name, label: t.name, age: t.age_group, color: t.color || '#3b82f6' })))
       if (f) setFinanceRaw({
         bankBalance: f.bank_balance || 0, bankUpdated: f.bank_updated,
         collected: f.collected || 0, collectedUpdated: f.collected_updated,

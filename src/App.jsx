@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
@@ -5,6 +6,7 @@ import Toast from './components/Toast'
 import MobileNav from './components/MobileNav'
 import TrialBanner from './components/TrialBanner'
 import PaywallScreen from './components/PaywallScreen'
+import UpgradeModal from './components/UpgradeModal'
 import { useAuth } from './hooks/useAuth'
 import { useStore } from './hooks/useStore'
 import { usePermissions } from './hooks/usePermissions'
@@ -26,6 +28,7 @@ import Messages   from './pages/Messages'
 import Admin      from './pages/Admin'
 import Staff       from './pages/Staff'
 import PlayerPortal from './pages/PlayerPortal'
+import ParentPortal from './pages/ParentPortal'
 import SuperAdmin  from './pages/SuperAdmin'
 import FilmRoom    from './pages/FilmRoom'
 import Onboarding  from './pages/Onboarding'
@@ -60,6 +63,7 @@ export default function App() {
   const { session, loading, authorized, signOut, role, orgId, orgData, needsOnboarding, isSuperAdmin } = useAuth()
   const { loading: dataLoading } = useStore()
   const trial = useTrial(orgId)
+  const [showUpgrade, setShowUpgrade] = useState(false)
 
   if (loading || dataLoading) return <LoadingScreen />
   if (!session) return <Login />
@@ -95,10 +99,7 @@ export default function App() {
         <div style={{ marginLeft:'var(--sidebar-w)', flex:1, display:'flex', flexDirection:'column', minHeight:'100vh' }}>
           <PaywallScreen
             orgName={orgData?.name}
-            onSelectPlan={(planId) => {
-              // TODO: redirect to Stripe checkout when billing is wired
-              alert(`Stripe billing coming soon! You selected: ${planId}`)
-            }}
+            onSelectPlan={() => setShowUpgrade(true)}
           />
         </div>
       </div>
@@ -115,11 +116,21 @@ export default function App() {
         flexDirection: 'column',
         minHeight: '100vh',
       }}>
-        {/* Trial banner — shows when in trial and not yet paid */}
-        {!isSuperAdmin && trial.showBanner && (
+        {/* Trial/Free banner */}
+        {!isSuperAdmin && (trial.showBanner || trial.tier === 'Rookie' || trial.tier === 'Free') && (
           <TrialBanner
             daysLeft={trial.trialDaysLeft}
-            onUpgrade={() => alert('Stripe billing coming soon!')}
+            tier={trial.tier}
+            onUpgrade={() => setShowUpgrade(true)}
+          />
+        )}
+
+        {/* Upgrade modal */}
+        {showUpgrade && (
+          <UpgradeModal
+            currentTier={trial.tier}
+            orgName={orgData?.name}
+            onClose={() => setShowUpgrade(false)}
           />
         )}
         <TopBar />
@@ -140,6 +151,7 @@ export default function App() {
             <Route path="/admin"      element={<RouteGuard path="/admin"><Admin /></RouteGuard>} />
             <Route path="/staff"      element={<RouteGuard path="/admin"><Staff /></RouteGuard>} />
             <Route path="/portal"     element={<PlayerPortal />} />
+            <Route path="/parent"     element={<ParentPortal />} />
             <Route path="/superadmin" element={<SuperAdmin />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>

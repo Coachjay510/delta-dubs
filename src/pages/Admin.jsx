@@ -173,7 +173,7 @@ export default function Admin() {
             <div>
               <div className="grid-2" style={{ gap:12, marginBottom:16 }}>
                 {[
-                  ['name',    'Org Name',    'text', 'Delta Dubs AAU'],
+                  ['name',    'Org Name',    'text', 'Your Org Name'],
                   ['city',    'City',        'text', 'Antioch'],
                   ['state',   'State',       'text', 'CA'],
                   ['ein',     'EIN',         'text', '92-XXXXXXX'],

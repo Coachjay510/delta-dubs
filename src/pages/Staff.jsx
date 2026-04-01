@@ -78,7 +78,7 @@ function initials(fname, lname) {
 export default function Staff() {
   const { admins, addAdmin, removeAdmin, showToast, orgTeams } = useStore()
   const TEAMS_OPT = orgTeams.map(t => t.id || t.label || t.name).filter(Boolean)
-  const { user } = useAuth()
+  const { user, orgData } = useAuth()
   const [editingId, setEditingId]   = useState(null)
   const [editForm, setEditForm]     = useState({})
   const [showAddModal, setShowAddModal] = useState(false)
@@ -133,7 +133,7 @@ export default function Staff() {
       const ok = await callEmail('admin-created', {
         adminName: `${addForm.fname} ${addForm.lname}`.trim(),
         adminEmail: addForm.email, role: addForm.role,
-        teamAccess: addForm.team, orgName: 'Delta Dubs',
+        teamAccess: addForm.team, orgName: orgData?.name || 'Your Org',
       })
       showToast(ok ? '✅ Staff added & email sent!' : '✅ Staff added (email failed)')
     } else {
@@ -144,7 +144,7 @@ export default function Staff() {
   }
 
   async function handleReset(email) {
-    const ok = await callEmail('password-reset', { email, orgName: 'Delta Dubs' })
+    const ok = await callEmail('password-reset', { email, orgName: orgData?.name || 'Your Org' })
     showToast(ok ? `📧 Reset sent to ${email}` : '❌ Reset failed')
   }
 

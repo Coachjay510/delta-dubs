@@ -8,6 +8,7 @@ const NAV = [
   { section: 'Overview' },
   { to: '/',           icon: '⬡', label: 'Dashboard',       hideFor: ['Player'] },
   { to: '/portal',     icon: '⬡', label: 'My Profile',      showFor: ['Player'] },
+  { to: '/parent',     icon: '👨‍👩‍👧', label: 'Parent Portal',    showFor: ['Parent'] },
   { section: 'Roster' },
   { to: '/players',    icon: '○', label: 'Players' },
   { to: '/teams',      icon: '◈', label: 'Teams' },

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../hooks/useStore'
 
 export default function Finance() {
-  const { players, finance, setFinance, projectedIncome, projectedNet, spending } = useStore()
+  const { players, finance, setFinance, projectedIncome, projectedNet, spending, orgTeams } = useStore()
   const [bankInput, setBankInput]   = useState('')
   const [collInput, setCollInput]   = useState('')
 
@@ -28,11 +28,12 @@ export default function Finance() {
   }
 
   // Income breakdown by team
-  const byTeam = ['Drive','Energy','Passion','Power'].map(team => {
-    const tPlayers = onRoster.filter(p => p.team === team)
+  const byTeam = orgTeams.map(t => {
+    const teamName = t.label || t.id || t.name
+    const tPlayers = onRoster.filter(p => p.team === teamName)
     const tIncome  = tPlayers.reduce((s, p) => s + (p.isNew ? 385 : 320), 0)
     const tCollect = tPlayers.reduce((s, p) => s + ((p.isNew ? 385 : 320) - (p.balance || 0)), 0)
-    return { team, count: tPlayers.length, income: tIncome, collected: tCollect }
+    return { team: teamName, color: t.color || '#5cb800', count: tPlayers.length, income: tIncome, collected: tCollect }
   })
 
   const spendByCategory = spending.reduce((acc, s) => {

@@ -14,12 +14,12 @@ const STATUS_COLORS = {
 }
 
 const TIER_COLORS = {
-  Starter: '#5cb800',
-  Pro:     '#3b82f6',
-  Elite:   '#a855f7',
+  Rookie:  '#5cb800',
+  Varsity: '#3b82f6',
+  Pro:     '#a855f7',
 }
 
-const TIER_PRICES = { Starter: 49, Pro: 99, Elite: 199 }
+const TIER_PRICES = { Rookie: 0, Varsity: 150, Pro: 350 }
 
 function Badge({ label, color, bg, border }) {
   return (
@@ -51,6 +51,17 @@ export default function SuperAdmin() {
     login_footer:     '© 2026 NEXT PLAY SPORTS MEDIA & MANAGEMENT',
   })
   const [loginSaving, setLoginSaving] = useState(false)
+
+  // Landing page editor
+  const [landingSettings, setLandingSettings] = useState({
+    landing_hero_title:    'RUN YOUR AAU ORG DIFFERENTLY',
+    landing_hero_sub:      'The all-in-one platform built for AAU basketball organizations.',
+    landing_cta_text:      'Start Free Trial',
+    landing_cta_url:       'https://nextplaymm.vercel.app',
+    landing_email:         'nextplaysports.ca@gmail.com',
+    landing_filmroom_price:'+$30/yr',
+  })
+  const [landingSaving, setLandingSaving] = useState(false)
   const [inviteForm, setInviteForm] = useState({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
   const [newSuperEmail, setNewSuperEmail] = useState('')
   const [saving, setSaving]         = useState(false)
@@ -71,11 +82,14 @@ export default function SuperAdmin() {
   async function fetchLoginSettings() {
     const { data } = await supabase.from('platform_settings')
       .select('key, value')
-      .in('key', ['login_heading','login_subheading','login_tagline','login_footer'])
+      .in('key', ['login_heading','login_subheading','login_tagline','login_footer',
+                  'landing_hero_title','landing_hero_sub','landing_cta_text','landing_cta_url',
+                  'landing_email','landing_filmroom_price'])
     if (data?.length) {
       const map = {}
       data.forEach(r => { map[r.key] = r.value })
       setLoginSettings(prev => ({ ...prev, ...map }))
+      setLandingSettings(prev => ({ ...prev, ...map }))
     }
   }
 
@@ -85,6 +99,14 @@ export default function SuperAdmin() {
     await supabase.from('platform_settings').upsert(rows, { onConflict: 'key' })
     setLoginSaving(false)
     alert('Login page updated!')
+  }
+
+  async function saveLandingSettings() {
+    setLandingSaving(true)
+    const rows = Object.entries(landingSettings).map(([key, value]) => ({ key, value }))
+    await supabase.from('platform_settings').upsert(rows, { onConflict: 'key' })
+    setLandingSaving(false)
+    alert('Landing page settings saved! Redeploy landing/index.html to see changes, or connect it to Supabase.')
   }
 
   async function fetchAll() {
@@ -188,7 +210,7 @@ export default function SuperAdmin() {
     { id:'orgs',       label:`Orgs (${orgs.length})` },
     { id:'users',      label:`Users (${orgUsers.length})` },
     { id:'superadmins',label:'Super Admins' },
-    { id:'logineditor',label:'Login Page' },
+    { id:'logineditor',label:'Login & Landing' },
   ]
 
   return (
@@ -252,7 +274,7 @@ export default function SuperAdmin() {
             <div className="card">
               <div className="card-header"><span className="card-title">Orgs by Tier</span></div>
               <div className="card-body">
-                {['Starter','Pro','Elite'].map(tier => {
+                {['Rookie','Varsity','Pro'].map(tier => {
                   const count = orgs.filter(o => (o.tier||'Starter') === tier).length
                   const tc = TIER_COLORS[tier]
                   const revenue = count * TIER_PRICES[tier]
@@ -536,9 +558,9 @@ export default function SuperAdmin() {
                 <div className="form-group full">
                   <label className="form-label">Subscription Tier</label>
                   <select className="form-select" value={inviteForm.tier} onChange={e => setInviteForm(f=>({...f,tier:e.target.value}))}>
-                    <option value="Starter">Starter — $49/mo</option>
-                    <option value="Pro">Pro — $99/mo</option>
-                    <option value="Elite">Elite — $199/mo</option>
+                    <option value="Rookie">Rookie — Free</option>
+                    <option value="Varsity">Varsity — $150/yr</option>
+                    <option value="Pro">Pro — $350/yr</option>
                   </select>
                 </div>
               </div>
@@ -557,19 +579,20 @@ export default function SuperAdmin() {
       )}
 
       {!loading && tab === 'logineditor' && (
-        <div style={{ maxWidth:600 }}>
+        <div style={{ maxWidth:640 }}>
+
+          {/* ── LOGIN PAGE EDITOR ── */}
           <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:6 }}>Login Page Editor</div>
-          <div style={{ fontSize:13, color:'var(--text2)', marginBottom:24 }}>
+          <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>
             Edit the text that appears on the sign-in page. Changes go live immediately.
           </div>
-
           {[
             { key:'login_heading',    label:'Heading',    placeholder:'Sign in' },
             { key:'login_subheading', label:'Subheading', placeholder:'Access your org dashboard' },
             { key:'login_tagline',    label:'Tagline',    placeholder:'Sign in with your Google account to continue.' },
             { key:'login_footer',     label:'Footer',     placeholder:'© 2026 NEXT PLAY SPORTS MEDIA & MANAGEMENT' },
           ].map(field => (
-            <div key={field.key} className="form-group" style={{ marginBottom:16 }}>
+            <div key={field.key} className="form-group" style={{ marginBottom:14 }}>
               <label className="form-label">{field.label}</label>
               <input className="form-input" placeholder={field.placeholder}
                 value={loginSettings[field.key] || ''}
@@ -577,25 +600,48 @@ export default function SuperAdmin() {
               />
             </div>
           ))}
-
-          {/* Preview */}
-          <div style={{ background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:10,
-            padding:20, marginBottom:20 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1,
-              textTransform:'uppercase', marginBottom:12, fontFamily:'var(--font-mono)' }}>Preview</div>
-            <div style={{ fontFamily:'var(--font-display)', fontSize:22, marginBottom:4 }}>{loginSettings.login_heading}</div>
-            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:12 }}>{loginSettings.login_subheading}</div>
-            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:6,
-              padding:'10px 14px', fontSize:12, color:'var(--text3)', marginBottom:8 }}>
-              [Continue with Google button]
-            </div>
+          <div style={{ background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:10, padding:16, marginBottom:16 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', marginBottom:10, fontFamily:'var(--font-mono)' }}>Preview</div>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:4 }}>{loginSettings.login_heading}</div>
+            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:10 }}>{loginSettings.login_subheading}</div>
+            <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:6, padding:'8px 12px', fontSize:12, color:'var(--text3)', marginBottom:6 }}>[Continue with Google button]</div>
             <div style={{ fontSize:11, color:'var(--text3)' }}>{loginSettings.login_tagline}</div>
-            <div style={{ marginTop:12, fontSize:10, color:'var(--text3)', fontFamily:'var(--font-mono)' }}>{loginSettings.login_footer}</div>
+            <div style={{ marginTop:10, fontSize:10, color:'var(--text3)', fontFamily:'var(--font-mono)' }}>{loginSettings.login_footer}</div>
           </div>
-
-          <button className="btn btn-primary" onClick={saveLoginSettings} disabled={loginSaving}>
+          <button className="btn btn-primary" onClick={saveLoginSettings} disabled={loginSaving} style={{ marginBottom:32 }}>
             {loginSaving ? 'Saving…' : '💾 Save Login Page'}
           </button>
+
+          {/* ── LANDING PAGE EDITOR ── */}
+          <div style={{ borderTop:'1px solid var(--border2)', paddingTop:28, marginTop:8 }}>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:6 }}>Landing Page Editor</div>
+            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>
+              Edit key text and links on the public marketing page. After saving, redeploy the landing folder for changes to appear.
+            </div>
+            {[
+              { key:'landing_hero_title',     label:'Hero Title',         placeholder:'RUN YOUR AAU ORG DIFFERENTLY' },
+              { key:'landing_hero_sub',        label:'Hero Subheading',    placeholder:'The all-in-one platform...' },
+              { key:'landing_cta_text',        label:'CTA Button Text',    placeholder:'Start Free Trial' },
+              { key:'landing_cta_url',         label:'CTA Button URL',     placeholder:'https://nextplaymm.vercel.app' },
+              { key:'landing_email',           label:'Contact Email',       placeholder:'nextplaysports.ca@gmail.com' },
+              { key:'landing_filmroom_price',  label:'Film Room Add-on Price', placeholder:'+$30/yr' },
+            ].map(field => (
+              <div key={field.key} className="form-group" style={{ marginBottom:14 }}>
+                <label className="form-label">{field.label}</label>
+                <input className="form-input" placeholder={field.placeholder}
+                  value={landingSettings[field.key] || ''}
+                  onChange={e => setLandingSettings(prev => ({ ...prev, [field.key]: e.target.value }))}
+                />
+              </div>
+            ))}
+            <div style={{ background:'rgba(92,184,0,.06)', border:'1px solid rgba(92,184,0,.2)', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:12, color:'var(--text2)' }}>
+              💡 To make landing page changes fully live without a redeploy, connect <code>landing/index.html</code> to fetch from Supabase <code>platform_settings</code> on load.
+            </div>
+            <button className="btn btn-primary" onClick={saveLandingSettings} disabled={landingSaving}>
+              {landingSaving ? 'Saving…' : '💾 Save Landing Page'}
+            </button>
+          </div>
+
         </div>
       )}
 

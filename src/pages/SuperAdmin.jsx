@@ -62,7 +62,7 @@ export default function SuperAdmin() {
     landing_filmroom_price:'+$30/yr',
   })
   const [landingSaving, setLandingSaving] = useState(false)
-  const [inviteForm, setInviteForm] = useState({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
+  const [inviteForm, setInviteForm] = useState({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
   const [newSuperEmail, setNewSuperEmail] = useState('')
   const [saving, setSaving]         = useState(false)
   const [emailTarget, setEmailTarget] = useState(null)
@@ -161,7 +161,7 @@ export default function SuperAdmin() {
       })
       await fetchAll()
       setShowInviteModal(false)
-      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Starter', ein:'' })
+      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
     } catch (err) { console.error(err) }
     finally { setSaving(false) }
   }
@@ -199,7 +199,7 @@ export default function SuperAdmin() {
     </div>
   )
 
-  const mrr = orgs.filter(o => o.status === 'active').reduce((s, o) => s + (TIER_PRICES[o.tier||'Starter']||49), 0)
+  const mrr = orgs.filter(o => o.status === 'active').reduce((s, o) => s + (TIER_PRICES[o.tier||'Rookie']||0), 0)
   const activeOrgs = orgs.filter(o => !o.status || o.status === 'active').length
   const trialOrgs  = orgs.filter(o => o.status === 'trial').length
   const totalPlayers = Object.values(playerCounts).reduce((s,c) => s + c.onRoster, 0)
@@ -256,7 +256,7 @@ export default function SuperAdmin() {
         <div>
           <div className="grid-4" style={{ marginBottom:24 }}>
             {[
-              ['MRR', `$${mrr.toLocaleString()}`, 'sc-purple', 'Monthly recurring'],
+              ['ARR', `$${mrr.toLocaleString()}`, 'sc-purple', 'Annual recurring revenue'],
               ['Active Orgs', activeOrgs, 'sc-green', `${trialOrgs} on trial`],
               ['Total Players', totalPlayers, 'sc-blue', 'On roster across all orgs'],
               ['Platform Users', orgUsers.length, 'sc-orange', 'Admins + coaches'],
@@ -275,7 +275,7 @@ export default function SuperAdmin() {
               <div className="card-header"><span className="card-title">Orgs by Tier</span></div>
               <div className="card-body">
                 {['Rookie','Varsity','Pro'].map(tier => {
-                  const count = orgs.filter(o => (o.tier||'Starter') === tier).length
+                  const count = orgs.filter(o => (o.tier||'Rookie') === tier).length
                   const tc = TIER_COLORS[tier]
                   const revenue = count * TIER_PRICES[tier]
                   return (
@@ -323,7 +323,7 @@ export default function SuperAdmin() {
             const pc = playerCounts[org.id] || { total:0, onRoster:0 }
             const members = orgUsers.filter(u => u.org_id === org.id)
             const status = org.status || 'active'
-            const tier   = org.tier   || 'Starter'
+            const tier   = org.tier   || 'Rookie'
             const sc = STATUS_COLORS[status] || STATUS_COLORS.active
             const tc = TIER_COLORS[tier] || '#5cb800'
             const isExpanded = expandedOrg === org.id
@@ -354,8 +354,10 @@ export default function SuperAdmin() {
                       <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>Admins</div>
                     </div>
                     <div style={{ textAlign:'center' }}>
-                      <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:tc }}>${TIER_PRICES[tier]}</div>
-                      <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>/mo</div>
+                      <div style={{ fontFamily:'var(--font-display)', fontSize:22, color:tc }}>
+                        {TIER_PRICES[tier] === 0 ? 'Free' : `$${TIER_PRICES[tier]}/yr`}
+                      </div>
+                      <div style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:1 }}>Plan</div>
                     </div>
                   </div>
                   <Badge label={tier} bg={tc+'20'} color={tc} border={tc+'40'} />
@@ -375,7 +377,7 @@ export default function SuperAdmin() {
                             <div className="form-label" style={{ marginBottom:4 }}>Tier</div>
                             <select className="filter-select" style={{ width:'100%', fontSize:12 }}
                               value={tier} onChange={e => updateOrg(org.id, { tier: e.target.value })}>
-                              {['Starter','Pro','Elite'].map(t => <option key={t} value={t}>{t} — ${TIER_PRICES[t]}/mo</option>)}
+                              <option value="Rookie">Rookie — Free</option><option value="Varsity">Varsity — $150/yr</option><option value="Pro">Pro — $350/yr</option>
                             </select>
                           </div>
                           <div>

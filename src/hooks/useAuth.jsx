@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
     if (!id) return
     const { data } = await supabase
       .from('orgs')
-      .select('id, status, tier, trial_started_at, name')
+      .select('id, status, tier, trial_started_at, name, sport, city, state, type')
       .eq('id', id)
       .maybeSingle()
     if (data) setOrgData(data)

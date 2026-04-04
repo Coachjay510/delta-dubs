@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { SPORTS } from '../hooks/useSport'
 
 const STEPS = ['Your Org', 'Your Teams', 'Import Roster', 'You']
 
@@ -16,6 +17,7 @@ export default function Onboarding() {
   const [orgCity,  setOrgCity]  = useState('')
   const [orgState, setOrgState] = useState('')
   const [orgType,  setOrgType]  = useState('AAU')
+  const [orgSport, setOrgSport] = useState('basketball')
 
   // Step 1
   const [teams, setTeams] = useState([{ name:'', ageGroup:'15U', color:'#3b82f6' }])
@@ -102,7 +104,7 @@ export default function Onboarding() {
       const { error: orgErr } = await supabase.from('orgs').insert({
         id: orgId, name: orgName.trim(),
         city: orgCity.trim() || null, state: orgState.trim() || null,
-        type: orgType, status: 'trial', tier: 'Free',
+        type: orgType, sport: orgSport, status: 'trial', tier: 'Free',
         trial_started_at: new Date().toISOString(),
       })
       if (orgErr) throw orgErr
@@ -203,6 +205,20 @@ export default function Onboarding() {
                 <input className="form-input" placeholder="CA" maxLength={2} value={orgState} onChange={e => setOrgState(e.target.value.toUpperCase())} style={{ width:80 }}/>
               </div>
               <div>
+                <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:8 }}>Sport *</label>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:16 }}>
+                  {SPORTS.map(s => (
+                    <button key={s.id} onClick={() => setOrgSport(s.id)}
+                      style={{ padding:'8px 16px', borderRadius:7, fontSize:13, fontWeight:600, cursor:'pointer',
+                        border:`1px solid ${orgSport===s.id?'var(--green)':'var(--border2)'}`,
+                        background: orgSport===s.id?'rgba(92,184,0,.12)':'var(--bg3)',
+                        color: orgSport===s.id?'var(--green2)':'var(--text2)' }}>
+                      {s.icon} {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <label style={{ fontSize:11, fontWeight:600, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', display:'block', marginBottom:8 }}>Organization Type</label>
                 <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
                   {ORG_TYPES.map(t => (
@@ -215,6 +231,7 @@ export default function Onboarding() {
                     </button>
                   ))}
                 </div>
+              </div>
               </div>
             </div>
           )}
@@ -351,6 +368,7 @@ export default function Onboarding() {
                 <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', marginBottom:10, fontFamily:'var(--font-m)' }}>Summary</div>
                 <div style={{ fontSize:13, color:'var(--text2)', lineHeight:2.2 }}>
                   <div><span style={{ color:'var(--text3)' }}>Org:</span> <strong style={{ color:'var(--text)' }}>{orgName}</strong>{orgCity && ` · ${orgCity}, ${orgState}`}</div>
+                  <div><span style={{ color:'var(--text3)' }}>Sport:</span> {SPORTS.find(s=>s.id===orgSport)?.icon} {SPORTS.find(s=>s.id===orgSport)?.label}</div>
                   <div><span style={{ color:'var(--text3)' }}>Type:</span> {orgType}</div>
                   <div><span style={{ color:'var(--text3)' }}>Teams:</span> {teams.filter(t=>t.name).map(t=>t.name).join(', ')||'None'}</div>
                   <div><span style={{ color:'var(--text3)' }}>Roster:</span> {rosterPlayers.length > 0 ? `${rosterPlayers.length} players from import` : 'Add manually after setup'}</div>

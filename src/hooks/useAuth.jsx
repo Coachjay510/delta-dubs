@@ -30,12 +30,6 @@ export function AuthProvider({ children }) {
   async function resolveUserOrg(userId, email) {
     console.log('[useAuth] resolving org for:', email, userId)
 
-    // Super admin gets delta-dubs always
-    if (email === SUPER_ADMIN) {
-      console.log('[useAuth] super admin detected')
-      return { orgId: 'delta-dubs', role: 'Head Admin', teamAccess: 'All Teams' }
-    }
-
     // 1. Check org_users by user_id (most reliable — set after first login)
     const { data: byUserId } = await supabase
       .from('org_users')

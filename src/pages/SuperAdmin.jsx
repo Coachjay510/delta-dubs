@@ -44,6 +44,14 @@ export default function SuperAdmin() {
   const [showSuperAdminModal, setShowSuperAdminModal] = useState(false)
 
   // Login editor
+  const [appCardSettings, setAppCardSettings] = useState({
+    modal_title: 'SIGN IN TO\nYOUR APP',
+    modal_subtitle: 'Choose an app to continue.',
+    app1_name: 'NP Manager', app1_desc: 'Roster, payments, recruiting & org tools', app1_icon: '🏀', app1_badge: 'Live', app1_url: 'https://delta-dubs.vercel.app', app1_enabled: 'true',
+    app2_name: 'NP Tournaments', app2_desc: 'Bracket & event management', app2_icon: '🏆', app2_badge: 'Live', app2_url: 'https://np-tournaments.vercel.app', app2_enabled: 'true',
+    app3_name: 'NP Film Room', app3_desc: 'Video editing, clips & game stats', app3_icon: '▶', app3_badge: 'Desktop', app3_url: 'np-filmroom://auth/callback', app3_enabled: 'true',
+  })
+  const [appCardSaving, setAppCardSaving] = useState(false)
   const [loginSettings, setLoginSettings] = useState({
     login_heading:    'Sign in',
     login_subheading: 'Access your org dashboard',
@@ -100,12 +108,17 @@ export default function SuperAdmin() {
         'landing_logo_main_url','landing_logo_icon_url','landing_logo_font_url',
         'landing_logo_main_size','landing_logo_icon_size',
         'login_logo_size','login_bg_color','login_card_color',
+        'modal_title','modal_subtitle',
+        'app1_name','app1_desc','app1_icon','app1_badge','app1_url','app1_enabled',
+        'app2_name','app2_desc','app2_icon','app2_badge','app2_url','app2_enabled',
+        'app3_name','app3_desc','app3_icon','app3_badge','app3_url','app3_enabled',
       ])
     if (data?.length) {
       const map = {}
       data.forEach(r => { map[r.key] = r.value })
       setLoginSettings(prev => ({ ...prev, ...map }))
       setLandingSettings(prev => ({ ...prev, ...map }))
+      setAppCardSettings(prev => ({ ...prev, ...map }))
     }
   }
 
@@ -138,6 +151,14 @@ export default function SuperAdmin() {
     await supabase.from('platform_settings').upsert(rows, { onConflict: 'key' })
     setLoginSaving(false)
     alert('Login page updated!')
+  }
+
+  async function saveAppCardSettings() {
+    setAppCardSaving(true)
+    const rows = Object.entries(appCardSettings).map(([key, value]) => ({ key, value }))
+    await supabase.from('platform_settings').upsert(rows, { onConflict: 'key' })
+    setAppCardSaving(false)
+    alert('Sign-in modal updated! Changes live on next page load.')
   }
 
   async function saveLandingSettings() {
@@ -652,6 +673,83 @@ export default function SuperAdmin() {
           <button className="btn btn-primary" onClick={saveLoginSettings} disabled={loginSaving} style={{ marginBottom:32 }}>
             {loginSaving ? 'Saving…' : '💾 Save Login Page'}
           </button>
+
+          {/* ── APP CARD EDITOR ── */}
+          <div style={{ borderTop:'1px solid var(--border2)', paddingTop:28, marginTop:8, marginBottom:32 }}>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:6 }}>Sign-In Modal Editor</div>
+            <div style={{ fontSize:13, color:'var(--text2)', marginBottom:20 }}>
+              Edit the app cards that appear in the "SIGN IN TO YOUR APP" modal.
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
+              <div className="form-group">
+                <label className="form-label">Modal Title</label>
+                <input className="form-input" value={appCardSettings.modal_title||''} onChange={e=>setAppCardSettings(p=>({...p,modal_title:e.target.value}))} placeholder="SIGN IN TO YOUR APP"/>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Modal Subtitle</label>
+                <input className="form-input" value={appCardSettings.modal_subtitle||''} onChange={e=>setAppCardSettings(p=>({...p,modal_subtitle:e.target.value}))} placeholder="Choose an app to continue."/>
+              </div>
+            </div>
+
+            {[1,2,3].map(n => (
+              <div key={n} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:10, padding:16, marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', marginBottom:12, fontFamily:'var(--font-mono)' }}>App {n}</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:10 }}>
+                  <div className="form-group">
+                    <label className="form-label">Name</label>
+                    <input className="form-input" value={appCardSettings[`app${n}_name`]||''} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_name`]:e.target.value}))}/>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Icon (emoji)</label>
+                    <input className="form-input" value={appCardSettings[`app${n}_icon`]||''} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_icon`]:e.target.value}))}/>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Badge</label>
+                    <input className="form-input" value={appCardSettings[`app${n}_badge`]||''} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_badge`]:e.target.value}))} placeholder="Live / Beta / Desktop"/>
+                  </div>
+                </div>
+                <div className="form-group" style={{ marginBottom:10 }}>
+                  <label className="form-label">Description</label>
+                  <input className="form-input" value={appCardSettings[`app${n}_desc`]||''} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_desc`]:e.target.value}))}/>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:10 }}>
+                  <div className="form-group">
+                    <label className="form-label">Redirect URL</label>
+                    <input className="form-input" value={appCardSettings[`app${n}_url`]||''} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_url`]:e.target.value}))}/>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Enabled</label>
+                    <select className="form-select" value={appCardSettings[`app${n}_enabled`]||'true'} onChange={e=>setAppCardSettings(p=>({...p,[`app${n}_enabled`]:e.target.value}))}>
+                      <option value="true">Visible</option>
+                      <option value="false">Hidden</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Preview */}
+            <div style={{ background:'var(--bg3)', border:'1px solid var(--border2)', borderRadius:10, padding:16, marginBottom:16 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', marginBottom:12, fontFamily:'var(--font-mono)' }}>Preview</div>
+              <div style={{ fontSize:18, fontWeight:700, color:'var(--text)', marginBottom:4, whiteSpace:'pre-line' }}>{appCardSettings.modal_title}</div>
+              <div style={{ fontSize:12, color:'var(--text3)', marginBottom:16 }}>{appCardSettings.modal_subtitle}</div>
+              {[1,2,3].filter(n => appCardSettings[`app${n}_enabled`] !== 'false').map(n => (
+                <div key={n} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:8, marginBottom:8 }}>
+                  <div style={{ fontSize:22 }}>{appCardSettings[`app${n}_icon`]}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--green2)' }}>{appCardSettings[`app${n}_name`]}</div>
+                    <div style={{ fontSize:11, color:'var(--text3)' }}>{appCardSettings[`app${n}_desc`]}</div>
+                  </div>
+                  <span style={{ fontSize:10, padding:'2px 8px', borderRadius:20, background:'rgba(92,184,0,0.1)', color:'var(--green2)', border:'1px solid rgba(92,184,0,0.3)' }}>{appCardSettings[`app${n}_badge`]}</span>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn btn-primary" onClick={saveAppCardSettings} disabled={appCardSaving}>
+              {appCardSaving ? 'Saving…' : '💾 Save Sign-In Modal'}
+            </button>
+          </div>
 
           {/* ── LANDING PAGE EDITOR ── */}
           <div style={{ borderTop:'1px solid var(--border2)', paddingTop:28, marginTop:8 }}>

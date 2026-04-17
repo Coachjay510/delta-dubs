@@ -197,6 +197,22 @@ export default function SuperAdmin() {
     setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, ...updates } : o))
   }
 
+  async function deleteOrg(orgId, orgName) {
+    if (!window.confirm('DELETE ' + orgName + '? This removes the org and all users. Cannot be undone.')) return
+    await supabase.from('org_users').delete().eq('org_id', orgId)
+    await supabase.from('admins').delete().eq('org_id', orgId)
+    await supabase.from('orgs').delete().eq('id', orgId)
+    await fetchAll()
+    alert('Deleted ' + orgName)
+  }
+
+  async function resetToWizard(userId, email) {
+    if (!window.confirm('Reset ' + email + ' to onboarding wizard?')) return
+    await supabase.from('org_users').delete().eq('user_id', userId)
+    await fetchAll()
+    alert('Done! ' + email + ' will see setup wizard on next sign in.')
+  }
+
   async function inviteOrg() {
     if (!inviteForm.adminEmail) { alert('Email is required'); return }
     setSaving(true)

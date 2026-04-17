@@ -214,10 +214,16 @@ export default function SuperAdmin() {
         lname: inviteForm.adminName.split(' ').slice(1).join(' '),
         email: inviteForm.adminEmail, role: 'Head Admin', team_access: 'All Teams',
       })
-      // Send welcome email
-      await fetch(`${API}/api/email/welcome`, {
+      // Send invite email with signup link
+      await fetch(`${API}/api/email/invite-member`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminName: inviteForm.adminName, orgName: inviteForm.orgName, email: inviteForm.adminEmail }),
+        body: JSON.stringify({
+          contactName: inviteForm.adminName,
+          email: inviteForm.adminEmail,
+          plan: inviteForm.tier,
+          orgName: inviteForm.orgName,
+          signupUrl: 'https://delta-dubs.vercel.app',
+        }),
       })
       await fetchAll()
       setShowInviteModal(false)

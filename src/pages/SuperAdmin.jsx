@@ -198,25 +198,12 @@ export default function SuperAdmin() {
   }
 
   async function inviteOrg() {
-    if (!inviteForm.orgName || !inviteForm.adminEmail) return
+    if (!inviteForm.adminEmail) { alert('Email is required'); return }
     setSaving(true)
     try {
-      const orgId = inviteForm.orgId || inviteForm.orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-      // Create org
-      await supabase.from('orgs').insert({
-        id: orgId, name: inviteForm.orgName,
-        ein: inviteForm.ein, tier: inviteForm.tier, status: 'trial',
-        trial_started_at: new Date().toISOString(),
-      })
-      // Create admin record
-      await supabase.from('admins').insert({
-        org_id: orgId, fname: inviteForm.adminName.split(' ')[0],
-        lname: inviteForm.adminName.split(' ').slice(1).join(' '),
-        email: inviteForm.adminEmail, role: 'Head Admin', team_access: 'All Teams',
-      })
-      // Send invite email with signup link
-      await fetch(`${API}/api/email/invite-member`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API}/api/email/invite-member`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contactName: inviteForm.adminName,
           email: inviteForm.adminEmail,
@@ -225,10 +212,18 @@ export default function SuperAdmin() {
           signupUrl: 'https://delta-dubs.vercel.app',
         }),
       })
-      await fetchAll()
-      setShowInviteModal(false)
-      setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
-    } catch (err) { console.error(err) }
+      const data = await res.json()
+      if (data.success) {
+        alert(`Invite sent to ${inviteForm.adminEmail}!`)
+        setShowInviteModal(false)
+        setInviteForm({ orgName:'', orgId:'', adminName:'', adminEmail:'', tier:'Rookie', ein:'' })
+      } else {
+        alert('Failed: ' + (data.error?.message || JSON.stringify(data.error) || 'Unknown error'))
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Error: ' + err.message)
+    }
     finally { setSaving(false) }
   }
 
@@ -461,6 +456,9 @@ export default function SuperAdmin() {
                             <button className="btn btn-secondary btn-sm"
                               onClick={() => window.location.href = `${window.location.origin}?impersonate=${org.id}`}>
                               👁 View as Org
+                            </button>
+                            <button onClick={() => deleteOrg(org.id, org.name)} style={{ fontSize:11, padding:'3px 8px', borderRadius:5, cursor:'pointer', background:'rgba(239,68,68,0.1)', color:'#ef4444', border:'1px solid rgba(239,68,68,0.3)', fontWeight:600 }}>
+                              🗑 Delete
                             </button>
                           </div>
                         </div>

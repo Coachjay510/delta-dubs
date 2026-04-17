@@ -78,6 +78,11 @@ export default function SuperAdmin() {
     login_logo_size:         '52',
     login_bg_color:          '#04060a',
     login_card_color:        '#080c12',
+    login_text_color:        '#f0f2f7',
+    login_subtext_color:     '#8d97b0',
+    login_accent_color:      '#5cb800',
+    login_button_color:      '#ffffff',
+    login_button_text_color: '#1a1a1a',
   })
   const [landingSaving,   setLandingSaving]   = useState(false)
   const [uploadingLogo,   setUploadingLogo]   = useState(null)
@@ -107,7 +112,7 @@ export default function SuperAdmin() {
         'landing_email','landing_filmroom_price','landing_primary_color','landing_accent_color',
         'landing_logo_main_url','landing_logo_icon_url','landing_logo_font_url',
         'landing_logo_main_size','landing_logo_icon_size',
-        'login_logo_size','login_bg_color','login_card_color',
+        'login_logo_size','login_bg_color','login_card_color','login_text_color','login_subtext_color','login_accent_color','login_button_color','login_button_text_color',
         'modal_title','modal_subtitle',
         'app1_name','app1_desc','app1_icon','app1_badge','app1_url','app1_enabled',
         'app2_name','app2_desc','app2_icon','app2_badge','app2_url','app2_enabled',
@@ -830,6 +835,11 @@ export default function SuperAdmin() {
                 { key:'landing_accent_color',  label:'Accent Green',   defaultVal:'#7ae600' },
                 { key:'login_bg_color',         label:'Login BG',       defaultVal:'#04060a' },
                 { key:'login_card_color',       label:'Login Card',     defaultVal:'#080c12' },
+                { key:'login_text_color',       label:'Heading Text',   defaultVal:'#f0f2f7' },
+                { key:'login_subtext_color',    label:'Sub Text',       defaultVal:'#8d97b0' },
+                { key:'login_accent_color',     label:'Accent/Logo',    defaultVal:'#5cb800' },
+                { key:'login_button_color',     label:'Button Color',   defaultVal:'#ffffff' },
+                { key:'login_button_text_color',label:'Button Text',    defaultVal:'#1a1a1a' },
               ].map(({ key, label, defaultVal }) => (
                 <div key={key} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:8, padding:12 }}>
                   <div style={{ fontSize:11, fontWeight:700, color:'var(--text2)', marginBottom:8 }}>{label}</div>

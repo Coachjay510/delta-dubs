@@ -214,6 +214,37 @@ export default function Onboarding() {
             </div>
           </div>
         ) : (
+        {step === -1 ? (
+          <div style={{ maxWidth:800, margin:'0 auto' }}>
+            <div style={{ fontFamily:'var(--font-d)', fontSize:28, color:'var(--text)', marginBottom:8, textAlign:'center' }}>CHOOSE YOUR PLAN</div>
+            <div style={{ fontSize:13, color:'var(--text3)', marginBottom:32, textAlign:'center' }}>You can upgrade anytime. Start free, no credit card required.</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16 }}>
+              {PLANS.map(p => (
+                <div key={p.id} onClick={() => setPlan(p.id)} style={{
+                  background: plan === p.id ? 'rgba(92,184,0,0.08)' : 'var(--bg2)',
+                  border: `2px solid ${plan === p.id ? p.color : 'var(--border2)'}`,
+                  borderRadius:12, padding:24, cursor:'pointer', position:'relative',
+                  transition:'all .15s',
+                }}>
+                  {p.popular && <div style={{ position:'absolute', top:-10, left:'50%', transform:'translateX(-50%)', background:p.color, color:'#04060a', fontSize:9, fontWeight:700, padding:'2px 10px', borderRadius:20, letterSpacing:1 }}>MOST POPULAR</div>}
+                  <div style={{ fontFamily:'var(--font-d)', fontSize:20, color:p.color, marginBottom:4 }}>{p.name}</div>
+                  <div style={{ fontFamily:'var(--font-d)', fontSize:28, color:'var(--text)', marginBottom:4 }}>{p.price}</div>
+                  <div style={{ fontSize:11, color:'var(--text3)', marginBottom:16 }}>{p.desc}</div>
+                  {p.features.map(f => (
+                    <div key={f} style={{ fontSize:11, color:'var(--text2)', marginBottom:6, display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <span style={{ color:p.color }}>✓</span> {f}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div style={{ textAlign:'center', marginTop:32 }}>
+              <button onClick={() => setStep(0)} style={{ background:'#5cb800', color:'#04060a', border:'none', padding:'12px 40px', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer' }}>
+                Continue with {PLANS.find(p2 => p2.id === plan)?.name} →
+              </button>
+            </div>
+          </div>
+        ) : (
         <div style={{ background:'var(--bg2)', border:'1px solid var(--border2)', borderRadius:14, padding:32 }}>
 
           {/* ── STEP 0: Org Info ── */}

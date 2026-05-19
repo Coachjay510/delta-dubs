@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { supabasePlayers } from '../lib/supabasePlayers'
 import { useAuth } from '../hooks/useAuth'
 
 const SUPER_ADMINS = ['nextplaysports.ca@gmail.com']
@@ -293,6 +294,7 @@ export default function SuperAdmin() {
     { id:'users',      label:`Users (${orgUsers.length})` },
     { id:'superadmins',label:'Super Admins' },
     { id:'logineditor',label:'Login & Landing' },
+    { id:'npplatform', label:'NP Platform' },
   ]
 
   return (
@@ -966,6 +968,325 @@ export default function SuperAdmin() {
         </div>
       )}
 
+      {/* ── NP PLATFORM TAB ── */}
+      {tab === 'npplatform' && (
+        <NpPlatformTab />
+      )}
+
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  NP PLATFORM — Players management sub-panel
+// ─────────────────────────────────────────────────────────────
+const POSITIONS = ['Point Guard','Shooting Guard','Small Forward','Power Forward','Center']
+const BLANK_PLAYER = { name:'', position:'', jersey_number:'', grad_year:'', school_name:'', np_team_name:'' }
+const BLANK_GAME = { game_date:'', opponent:'', pts:'', reb:'', ast:'', stl:'', blk:'', turnovers:'', fg_made:'', fg_att:'', fg3_made:'', fg3_att:'', ft_made:'', ft_att:'', source:'aau' }
+
+function NpPlatformTab() {
+  const [players, setPlayers]       = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [search, setSearch]         = useState('')
+  const [editPlayer, setEditPlayer] = useState(null)   // null | player object | 'new'
+  const [saving, setSaving]         = useState(false)
+  const [draft, setDraft]           = useState(BLANK_PLAYER)
+  const [gameTarget, setGameTarget] = useState(null)   // player to add game log for
+  const [gameDraft, setGameDraft]   = useState(BLANK_GAME)
+  const [savingGame, setSavingGame] = useState(false)
+  const [photoFile, setPhotoFile]   = useState(null)
+  const photoRef = useRef()
+
+  useEffect(() => { fetchPlayers() }, [])
+
+  async function fetchPlayers() {
+    setLoading(true)
+    const { data } = await supabasePlayers
+      .from('players')
+      .select('id, name, position, jersey_number, grad_year, school_name, np_team_name, photo_url, stats(*)')
+      .not('name', 'is', null)
+      .order('name')
+    setPlayers(data ?? [])
+    setLoading(false)
+  }
+
+  function openEdit(player) {
+    setDraft({
+      name:          player.name ?? '',
+      position:      player.position ?? '',
+      jersey_number: player.jersey_number ?? '',
+      grad_year:     player.grad_year ?? '',
+      school_name:   player.school_name ?? '',
+      np_team_name:  player.np_team_name ?? '',
+    })
+    setPhotoFile(null)
+    setEditPlayer(player)
+  }
+
+  function openNew() {
+    setDraft(BLANK_PLAYER)
+    setPhotoFile(null)
+    setEditPlayer('new')
+  }
+
+  async function savePlayer() {
+    setSaving(true)
+    const payload = {
+      name:          draft.name.trim(),
+      position:      draft.position || null,
+      jersey_number: draft.jersey_number !== '' ? Number(draft.jersey_number) : null,
+      grad_year:     draft.grad_year !== '' ? Number(draft.grad_year) : null,
+      school_name:   draft.school_name.trim() || null,
+      np_team_name:  draft.np_team_name.trim() || null,
+    }
+    let playerId = editPlayer === 'new' ? null : editPlayer.id
+    if (editPlayer === 'new') {
+      const { data } = await supabasePlayers.from('players').insert(payload).select('id').single()
+      playerId = data?.id
+    } else {
+      await supabasePlayers.from('players').update(payload).eq('id', playerId)
+    }
+
+    // Upload photo if selected
+    if (photoFile && playerId) {
+      const buf = await photoFile.arrayBuffer()
+      const KEY = import.meta.env.VITE_PLAYERS_SUPABASE_ANON_KEY
+      const SB  = import.meta.env.VITE_PLAYERS_SUPABASE_URL
+      await fetch(`${SB}/storage/v1/object/player-photos/${playerId}/photo.png`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'image/png', 'x-upsert': 'true' },
+        body: buf,
+      })
+      const photoUrl = `${SB}/storage/v1/object/public/player-photos/${playerId}/photo.png`
+      await supabasePlayers.from('players').update({ photo_url: photoUrl }).eq('id', playerId)
+    }
+
+    setEditPlayer(null)
+    setSaving(false)
+    fetchPlayers()
+  }
+
+  async function saveGame() {
+    setSavingGame(true)
+    const num = v => v !== '' ? parseFloat(v) : null
+    const payload = {
+      player_id:  gameTarget.id,
+      game_date:  gameDraft.game_date || null,
+      opponent:   gameDraft.opponent.trim() || null,
+      source:     gameDraft.source,
+      pts:        num(gameDraft.pts),
+      reb:        num(gameDraft.reb),
+      ast:        num(gameDraft.ast),
+      stl:        num(gameDraft.stl),
+      blk:        num(gameDraft.blk),
+      turnovers:  num(gameDraft.turnovers),
+      fg_made:    num(gameDraft.fg_made),
+      fg_att:     num(gameDraft.fg_att),
+      fg3_made:   num(gameDraft.fg3_made),
+      fg3_att:    num(gameDraft.fg3_att),
+      ft_made:    num(gameDraft.ft_made),
+      ft_att:     num(gameDraft.ft_att),
+    }
+    await supabasePlayers.from('player_game_logs').insert(payload)
+    setGameTarget(null)
+    setGameDraft(BLANK_GAME)
+    setSavingGame(false)
+  }
+
+  const filtered = players.filter(p =>
+    !search || p.name.toLowerCase().includes(search.toLowerCase()) ||
+    (p.np_team_name ?? '').toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap' }}>
+        <div style={{ fontFamily:'var(--font-display)', fontSize:20, flex:1 }}>
+          NP Players — {players.length} players
+        </div>
+        <input
+          className="form-input" placeholder="Search players…" value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ width:220, marginBottom:0 }}
+        />
+        <button className="btn btn-primary btn-sm" onClick={openNew}>+ Add Player</button>
+        <button className="btn btn-secondary btn-sm" onClick={fetchPlayers}>🔄 Refresh</button>
+      </div>
+
+      {/* Player table */}
+      <div className="card">
+        <div className="table-wrap">
+          {loading ? (
+            <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>Loading…</div>
+          ) : (
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Position</th>
+                  <th>Team</th>
+                  <th>Class</th>
+                  <th>School</th>
+                  <th>Stats</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        {p.photo_url
+                          ? <img src={p.photo_url} alt="" style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover', objectPosition:'top' }} />
+                          : <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:'var(--text3)' }}>
+                              {p.jersey_number ?? p.name?.[0]}
+                            </div>
+                        }
+                        <div>
+                          <div style={{ fontWeight:600, fontSize:14 }}>{p.name}</div>
+                          {p.jersey_number != null && <div style={{ fontSize:11, color:'var(--text3)' }}>#{p.jersey_number}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ fontSize:12, color:'var(--text2)' }}>{p.position ?? '—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text2)' }}>{p.np_team_name ?? '—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text3)' }}>{p.grad_year ? `'${String(p.grad_year).slice(-2)}` : '—'}</td>
+                    <td style={{ fontSize:12, color:'var(--text3)' }}>{p.school_name ?? '—'}</td>
+                    <td>
+                      <span style={{ fontSize:11, color:'var(--text3)' }}>
+                        {(p.stats ?? []).length} source{(p.stats ?? []).length !== 1 ? 's' : ''}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display:'flex', gap:6 }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(p)}>Edit</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => { setGameTarget(p); setGameDraft(BLANK_GAME) }}>+ Game</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ── Edit / Add Player Modal ── */}
+      {editPlayer && (
+        <div className="modal-overlay" onClick={() => setEditPlayer(null)}>
+          <div className="modal" style={{ maxWidth:480 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">{editPlayer === 'new' ? 'Add Player' : `Edit — ${editPlayer.name}`}</div>
+            </div>
+            <div className="modal-body">
+              <div className="grid-2" style={{ gap:12 }}>
+                {[
+                  ['Full Name',      'name',          'text',   'Calvin Bailey III'],
+                  ['Jersey #',       'jersey_number', 'number', '4'],
+                  ['Grad Year',      'grad_year',     'number', '2027'],
+                  ['High School',    'school_name',   'text',   'Lincoln High'],
+                  ['NP Team Name',   'np_team_name',  'text',   'Delta Dubs Energy'],
+                ].map(([label, key, type, ph]) => (
+                  <div key={key} className="form-group" style={{ marginBottom:0 }}>
+                    <label className="form-label">{label}</label>
+                    <input className="form-input" type={type} placeholder={ph}
+                      value={draft[key]} onChange={e => setDraft(d => ({ ...d, [key]: e.target.value }))} />
+                  </div>
+                ))}
+                <div className="form-group" style={{ marginBottom:0 }}>
+                  <label className="form-label">Position</label>
+                  <select className="form-input" value={draft.position} onChange={e => setDraft(d => ({ ...d, position: e.target.value }))}>
+                    <option value="">— Select —</option>
+                    {POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Photo upload */}
+              <div className="form-group" style={{ marginTop:14 }}>
+                <label className="form-label">Photo</label>
+                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  {(photoFile || (editPlayer !== 'new' && editPlayer.photo_url)) && (
+                    <img
+                      src={photoFile ? URL.createObjectURL(photoFile) : editPlayer.photo_url}
+                      alt="" style={{ width:48, height:48, borderRadius:'50%', objectFit:'cover', objectPosition:'top' }}
+                    />
+                  )}
+                  <button className="btn btn-secondary btn-sm" onClick={() => photoRef.current.click()}>
+                    {photoFile ? '✓ Photo selected' : 'Choose Photo'}
+                  </button>
+                  <input ref={photoRef} type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={e => setPhotoFile(e.target.files[0] || null)} />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setEditPlayer(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={savePlayer} disabled={saving || !draft.name.trim()}>
+                {saving ? 'Saving…' : editPlayer === 'new' ? 'Add Player' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Game Log Modal ── */}
+      {gameTarget && (
+        <div className="modal-overlay" onClick={() => setGameTarget(null)}>
+          <div className="modal" style={{ maxWidth:520 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title">Add Game — {gameTarget.name}</div>
+            </div>
+            <div className="modal-body">
+              <div className="grid-2" style={{ gap:12, marginBottom:12 }}>
+                <div className="form-group" style={{ marginBottom:0 }}>
+                  <label className="form-label">Date</label>
+                  <input className="form-input" type="date" value={gameDraft.game_date}
+                    onChange={e => setGameDraft(d => ({ ...d, game_date: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom:0 }}>
+                  <label className="form-label">Opponent</label>
+                  <input className="form-input" placeholder="vs. Team Name" value={gameDraft.opponent}
+                    onChange={e => setGameDraft(d => ({ ...d, opponent: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom:0 }}>
+                  <label className="form-label">Source</label>
+                  <select className="form-input" value={gameDraft.source}
+                    onChange={e => setGameDraft(d => ({ ...d, source: e.target.value }))}>
+                    <option value="aau">AAU</option>
+                    <option value="highschool">High School</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ fontSize:11, fontWeight:700, color:'var(--text3)', letterSpacing:1, textTransform:'uppercase', marginBottom:8, fontFamily:'var(--font-mono)' }}>Box Score</div>
+              <div className="grid-3" style={{ gap:10 }}>
+                {[
+                  ['PTS','pts'],['REB','reb'],['AST','ast'],
+                  ['STL','stl'],['BLK','blk'],['TO','turnovers'],
+                  ['FG Made','fg_made'],['FG Att','fg_att'],
+                  ['3P Made','fg3_made'],['3P Att','fg3_att'],
+                  ['FT Made','ft_made'],['FT Att','ft_att'],
+                ].map(([label, key]) => (
+                  <div key={key} className="form-group" style={{ marginBottom:0 }}>
+                    <label className="form-label">{label}</label>
+                    <input className="form-input" type="number" min="0" placeholder="0"
+                      value={gameDraft[key]}
+                      onChange={e => setGameDraft(d => ({ ...d, [key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setGameTarget(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={saveGame} disabled={savingGame}>
+                {savingGame ? 'Saving…' : '+ Add Game Log'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

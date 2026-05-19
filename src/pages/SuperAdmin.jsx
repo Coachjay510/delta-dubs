@@ -970,7 +970,24 @@ export default function SuperAdmin() {
 
       {/* ── NP PLATFORM TAB ── */}
       {tab === 'npplatform' && (
-        <NpPlatformTab />
+        <div>
+          <div style={{ fontFamily:'var(--font-display)', fontSize:20, marginBottom:16 }}>NP Platform Admin</div>
+          <div className="card" style={{ padding:32, textAlign:'center', maxWidth:500 }}>
+            <div style={{ fontSize:36, marginBottom:12 }}>◉</div>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:18, marginBottom:8 }}>Player Management Console</div>
+            <div style={{ fontSize:13, color:'var(--text3)', lineHeight:1.7, marginBottom:24 }}>
+              Manage NP Players, organizations, teams, stats, and game logs in the dedicated admin console.
+            </div>
+            <a href="/np-players" style={{
+              display:'inline-block', padding:'10px 28px',
+              background:'var(--np-green)', color:'#000',
+              borderRadius:8, fontWeight:700, fontSize:14,
+              textDecoration:'none', letterSpacing:.5,
+            }}>
+              Open NP Players Admin →
+            </a>
+          </div>
+        </div>
       )}
 
     </div>

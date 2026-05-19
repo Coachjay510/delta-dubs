@@ -29,8 +29,9 @@ import Admin      from './pages/Admin'
 import Staff       from './pages/Staff'
 import PlayerPortal from './pages/PlayerPortal'
 import ParentPortal from './pages/ParentPortal'
-import SuperAdmin  from './pages/SuperAdmin'
-import FilmRoom    from './pages/FilmRoom'
+import SuperAdmin      from './pages/SuperAdmin'
+import NpPlayersAdmin  from './pages/NpPlayersAdmin'
+import FilmRoom        from './pages/FilmRoom'
 import Onboarding  from './pages/Onboarding'
 
 function LoadingScreen() {
@@ -172,7 +173,8 @@ export default function App() {
             <Route path="/staff"      element={<RouteGuard path="/admin"><Staff /></RouteGuard>} />
             <Route path="/portal"     element={<PlayerPortal />} />
             <Route path="/parent"     element={<ParentPortal />} />
-            <Route path="/superadmin" element={<SuperAdmin />} />
+            <Route path="/superadmin"  element={<SuperAdmin />} />
+            <Route path="/np-players" element={<NpPlayersAdmin />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -385,7 +385,9 @@ export default function Showcase() {
     load()
   }, [])
 
-  const spotlight = useMemo(() => players.filter(p => p.is_featured), [players])
+  const spotlight = useMemo(() =>
+    players.filter(p => p.is_featured).sort((a, b) => (a.grad_year || 9999) - (b.grad_year || 9999))
+  , [players])
 
   const teams = useMemo(() => {
     const set = new Set(players.map(p => p.np_team_name?.replace('Delta Dubs ', '') || '').filter(Boolean))

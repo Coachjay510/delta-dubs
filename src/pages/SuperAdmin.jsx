@@ -295,6 +295,7 @@ export default function SuperAdmin() {
     { id:'superadmins',label:'Super Admins' },
     { id:'logineditor',label:'Login & Landing' },
     { id:'npplatform', label:'NP Platform' },
+    { id:'showcase',   label:'Showcase' },
   ]
 
   return (
@@ -968,6 +969,9 @@ export default function SuperAdmin() {
         </div>
       )}
 
+      {/* ── SHOWCASE TAB ── */}
+      {tab === 'showcase' && <ShowcaseTab />}
+
       {/* ── NP PLATFORM TAB ── */}
       {tab === 'npplatform' && (
         <div>
@@ -990,6 +994,213 @@ export default function SuperAdmin() {
         </div>
       )}
 
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SHOWCASE — Delta Dubs public recruit page manager
+// ─────────────────────────────────────────────────────────────
+function ShowcaseTab() {
+  const [players,  setPlayers]  = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [editing,  setEditing]  = useState({})   // { [id]: { accolade, film_url, gpa } }
+  const [saving,   setSaving]   = useState({})   // { [id]: bool }
+
+  useEffect(() => { fetchPlayers() }, [])
+
+  async function fetchPlayers() {
+    setLoading(true)
+    const { data } = await supabasePlayers
+      .from('players')
+      .select('id, name, position, grad_year, np_team_name, photo_url, is_featured, accolade, film_url, gpa')
+      .not('name', 'is', null)
+      .order('is_featured', { ascending: false })
+      .order('grad_year', { ascending: true })
+      .order('name')
+    setPlayers(data ?? [])
+    setLoading(false)
+  }
+
+  async function toggleFeatured(p) {
+    const next = !p.is_featured
+    setPlayers(prev => prev.map(x => x.id === p.id ? { ...x, is_featured: next } : x))
+    await supabasePlayers.from('players').update({ is_featured: next }).eq('id', p.id)
+  }
+
+  function startEdit(p) {
+    setEditing(prev => ({
+      ...prev,
+      [p.id]: { accolade: p.accolade ?? '', film_url: p.film_url ?? '', gpa: p.gpa ?? '' },
+    }))
+  }
+
+  function cancelEdit(id) {
+    setEditing(prev => { const n = { ...prev }; delete n[id]; return n })
+  }
+
+  async function saveEdit(p) {
+    const draft = editing[p.id]
+    if (!draft) return
+    setSaving(prev => ({ ...prev, [p.id]: true }))
+    const payload = {
+      accolade: draft.accolade.trim() || null,
+      film_url:  draft.film_url.trim() || null,
+      gpa:       draft.gpa !== '' ? parseFloat(draft.gpa) : null,
+    }
+    await supabasePlayers.from('players').update(payload).eq('id', p.id)
+    setPlayers(prev => prev.map(x => x.id === p.id ? { ...x, ...payload } : x))
+    cancelEdit(p.id)
+    setSaving(prev => ({ ...prev, [p.id]: false }))
+  }
+
+  const classLabel = gy => {
+    if (!gy) return '—'
+    const map = { 2026:'Sr', 2027:'Jr', 2028:'So', 2029:'Fr', 2030:'8th', 2031:'7th' }
+    return map[gy] ?? `'${String(gy).slice(-2)}`
+  }
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, flexWrap:'wrap' }}>
+        <div style={{ fontFamily:'var(--font-display)', fontSize:20, flex:1 }}>
+          Delta Dubs Showcase
+        </div>
+        <a
+          href="https://delta-dubs.vercel.app/showcase"
+          target="_blank" rel="noopener noreferrer"
+          style={{
+            padding:'6px 16px', background:'#22c55e', color:'#000',
+            borderRadius:8, fontSize:12, fontWeight:700, textDecoration:'none', letterSpacing:.5,
+          }}
+        >
+          View Live Showcase ↗
+        </a>
+        <button className="btn btn-secondary btn-sm" onClick={fetchPlayers}>🔄 Refresh</button>
+      </div>
+
+      <div className="card" style={{ padding:0, overflow:'hidden' }}>
+        {loading ? (
+          <div style={{ padding:40, textAlign:'center', color:'var(--text3)' }}>Loading…</div>
+        ) : (
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom:'1px solid var(--border)' }}>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>PLAYER</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>CLASS / TEAM</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FEATURED</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>ACCOLADE</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FILM URL</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>GPA</th>
+                <th style={{ padding:'10px 14px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {players.map(p => {
+                const ed = editing[p.id]
+                const isSaving = saving[p.id]
+                return (
+                  <tr key={p.id} style={{
+                    borderBottom:'1px solid var(--border)',
+                    background: p.is_featured ? 'rgba(34,197,94,0.04)' : undefined,
+                  }}>
+                    <td style={{ padding:'10px 14px' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        {p.photo_url
+                          ? <img src={p.photo_url} alt="" style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover', objectPosition:'top', flexShrink:0 }} />
+                          : <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--bg4)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:'var(--text3)', flexShrink:0 }}>
+                              {p.name?.[0]}
+                            </div>
+                        }
+                        <div>
+                          <div style={{ fontWeight:600, fontSize:13 }}>{p.name}</div>
+                          <div style={{ fontSize:11, color:'var(--text3)' }}>{p.position ?? '—'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding:'10px 14px', fontSize:12 }}>
+                      <div style={{ color:'var(--text2)' }}>{classLabel(p.grad_year)}</div>
+                      <div style={{ fontSize:11, color:'var(--text3)' }}>{p.np_team_name ?? '—'}</div>
+                    </td>
+                    <td style={{ padding:'10px 14px' }}>
+                      <button
+                        onClick={() => toggleFeatured(p)}
+                        style={{
+                          padding:'4px 14px', borderRadius:20, fontSize:11, fontWeight:700,
+                          border:'none', cursor:'pointer', letterSpacing:.5,
+                          background: p.is_featured ? 'rgba(34,197,94,0.2)' : 'var(--bg4)',
+                          color: p.is_featured ? '#22c55e' : 'var(--text3)',
+                        }}
+                      >
+                        {p.is_featured ? '★ Featured' : '☆ Add'}
+                      </button>
+                    </td>
+                    <td style={{ padding:'10px 14px', maxWidth:200 }}>
+                      {ed ? (
+                        <input
+                          className="form-input"
+                          style={{ fontSize:12, padding:'4px 8px', marginBottom:0 }}
+                          value={ed.accolade}
+                          placeholder="e.g. 1st Team All-League"
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], accolade: e.target.value } }))}
+                        />
+                      ) : (
+                        <span style={{ fontSize:12, color: p.accolade ? 'var(--text1)' : 'var(--text3)' }}>
+                          {p.accolade || '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding:'10px 14px', maxWidth:160 }}>
+                      {ed ? (
+                        <input
+                          className="form-input"
+                          style={{ fontSize:12, padding:'4px 8px', marginBottom:0 }}
+                          value={ed.film_url}
+                          placeholder="YouTube or video URL"
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], film_url: e.target.value } }))}
+                        />
+                      ) : (
+                        <span style={{ fontSize:12, color: p.film_url ? '#60a5fa' : 'var(--text3)' }}>
+                          {p.film_url ? '▶ Linked' : '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding:'10px 14px' }}>
+                      {ed ? (
+                        <input
+                          className="form-input"
+                          style={{ fontSize:12, padding:'4px 8px', marginBottom:0, width:60 }}
+                          type="number" step="0.1" min="0" max="4"
+                          value={ed.gpa}
+                          placeholder="3.5"
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], gpa: e.target.value } }))}
+                        />
+                      ) : (
+                        <span style={{ fontSize:12, color: p.gpa ? 'var(--text1)' : 'var(--text3)' }}>
+                          {p.gpa ?? '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding:'10px 14px', whiteSpace:'nowrap' }}>
+                      {ed ? (
+                        <div style={{ display:'flex', gap:6 }}>
+                          <button className="btn btn-primary btn-sm" onClick={() => saveEdit(p)} disabled={isSaving}>
+                            {isSaving ? '…' : 'Save'}
+                          </button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => cancelEdit(p.id)}>×</button>
+                        </div>
+                      ) : (
+                        <button className="btn btn-secondary btn-sm" onClick={() => startEdit(p)}>Edit</button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   )
 }

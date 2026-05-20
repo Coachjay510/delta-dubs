@@ -46,11 +46,13 @@ function fmtPct(v) {
 
 function classLabel(gradYear) {
   if (!gradYear) return null
-  const map = { 2027:'SR', 2028:'JR', 2029:'SO', 2030:'FR', 2031:"7th" }
-  return map[gradYear] ? `${map[gradYear]} · '${String(gradYear).slice(2)}` : `'${String(gradYear).slice(2)}`
+  const map = { 2026:'12th', 2027:'11th', 2028:'10th', 2029:'9th', 2030:'8th', 2031:'7th' }
+  const grade = map[gradYear]
+  return grade ? `${grade} Grade · '${String(gradYear).slice(2)}` : `'${String(gradYear).slice(2)}`
 }
 
 function classBg(gradYear) {
+  if (gradYear === 2026) return '#b45309'
   if (gradYear === 2027) return G.orange
   if (gradYear === 2028) return '#7c3aed'
   if (gradYear === 2029) return '#1d4ed8'

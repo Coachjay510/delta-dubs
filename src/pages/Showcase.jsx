@@ -414,7 +414,11 @@ export default function Showcase() {
   )
 
   return (
-    <div style={{ minHeight:'100vh', background:G.bg, color:G.text1, fontFamily:'system-ui,sans-serif' }}>
+    <div style={{
+      minHeight:'100vh', width:'100vw', background:G.bg, color:G.text1,
+      fontFamily:'system-ui,sans-serif', overflowX:'hidden',
+      position:'fixed', inset:0, overflowY:'auto',
+    }}>
 
       {/* Hero */}
       <div style={{

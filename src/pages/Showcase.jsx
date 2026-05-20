@@ -148,6 +148,16 @@ function PlayerModal({ player, stats, onClose }) {
               }}>⭐ {player.accolade}</div>
             )}
 
+            {/* Bio */}
+            {player.bio && (
+              <div style={{
+                marginTop:14, fontSize:13, color:G.text2, lineHeight:1.7,
+                borderLeft:`3px solid ${G.green}`, paddingLeft:14,
+              }}>
+                {player.bio}
+              </div>
+            )}
+
             {/* Physical */}
             {(ht || ws || player.gpa) && (
               <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginTop:14 }}>

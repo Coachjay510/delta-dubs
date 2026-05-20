@@ -1004,7 +1004,7 @@ export default function SuperAdmin() {
 function ShowcaseTab() {
   const [players,  setPlayers]  = useState([])
   const [loading,  setLoading]  = useState(true)
-  const [editing,  setEditing]  = useState({})   // { [id]: { accolade, film_url, gpa } }
+  const [editing,  setEditing]  = useState({})   // { [id]: { accolade, film_url, gpa, bio } }
   const [saving,   setSaving]   = useState({})   // { [id]: bool }
 
   useEffect(() => { fetchPlayers() }, [])
@@ -1013,7 +1013,7 @@ function ShowcaseTab() {
     setLoading(true)
     const { data } = await supabasePlayers
       .from('players')
-      .select('id, name, position, grad_year, np_team_name, photo_url, is_featured, accolade, film_url, gpa')
+      .select('id, name, position, grad_year, np_team_name, photo_url, is_featured, accolade, film_url, gpa, bio')
       .not('name', 'is', null)
       .order('is_featured', { ascending: false })
       .order('grad_year', { ascending: true })
@@ -1031,7 +1031,7 @@ function ShowcaseTab() {
   function startEdit(p) {
     setEditing(prev => ({
       ...prev,
-      [p.id]: { accolade: p.accolade ?? '', film_url: p.film_url ?? '', gpa: p.gpa ?? '' },
+      [p.id]: { accolade: p.accolade ?? '', film_url: p.film_url ?? '', gpa: p.gpa ?? '', bio: p.bio ?? '' },
     }))
   }
 
@@ -1047,6 +1047,7 @@ function ShowcaseTab() {
       accolade: draft.accolade.trim() || null,
       film_url:  draft.film_url.trim() || null,
       gpa:       draft.gpa !== '' ? parseFloat(draft.gpa) : null,
+      bio:       draft.bio.trim() || null,
     }
     await supabasePlayers.from('players').update(payload).eq('id', p.id)
     setPlayers(prev => prev.map(x => x.id === p.id ? { ...x, ...payload } : x))
@@ -1091,6 +1092,7 @@ function ShowcaseTab() {
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>CLASS / TEAM</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FEATURED</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>ACCOLADE</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>BIO</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FILM URL</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>GPA</th>
                 <th style={{ padding:'10px 14px' }}></th>
@@ -1148,6 +1150,21 @@ function ShowcaseTab() {
                       ) : (
                         <span style={{ fontSize:12, color: p.accolade ? 'var(--text1)' : 'var(--text3)' }}>
                           {p.accolade || '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding:'10px 14px', maxWidth:240 }}>
+                      {ed ? (
+                        <textarea
+                          className="form-input"
+                          style={{ fontSize:12, padding:'4px 8px', marginBottom:0, minHeight:64, resize:'vertical' }}
+                          value={ed.bio}
+                          placeholder="Player bio…"
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], bio: e.target.value } }))}
+                        />
+                      ) : (
+                        <span style={{ fontSize:11, color: p.bio ? 'var(--text2)' : 'var(--text3)', lineHeight:1.5, display:'block', maxWidth:220 }}>
+                          {p.bio ? p.bio.slice(0, 80) + (p.bio.length > 80 ? '…' : '') : '—'}
                         </span>
                       )}
                     </td>

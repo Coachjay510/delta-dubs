@@ -31,6 +31,7 @@ import PlayerPortal from './pages/PlayerPortal'
 import ParentPortal from './pages/ParentPortal'
 import SuperAdmin      from './pages/SuperAdmin'
 import NpPlayersAdmin  from './pages/NpPlayersAdmin'
+import MeasureTool     from './pages/MeasureTool'
 import FilmRoom        from './pages/FilmRoom'
 import Onboarding  from './pages/Onboarding'
 
@@ -175,6 +176,7 @@ export default function App() {
             <Route path="/parent"     element={<ParentPortal />} />
             <Route path="/superadmin"  element={<SuperAdmin />} />
             <Route path="/np-players" element={<NpPlayersAdmin />} />
+            <Route path="/measure"    element={<MeasureTool />} />
             <Route path="*"           element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Toast from './components/Toast'
@@ -32,6 +32,7 @@ import ParentPortal from './pages/ParentPortal'
 import SuperAdmin      from './pages/SuperAdmin'
 import NpPlayersAdmin  from './pages/NpPlayersAdmin'
 import MeasureTool     from './pages/MeasureTool'
+import Showcase        from './pages/Showcase'
 import FilmRoom        from './pages/FilmRoom'
 import Onboarding  from './pages/Onboarding'
 
@@ -62,6 +63,9 @@ function RouteGuard({ path, children }) {
 }
 
 export default function App() {
+  const location = useLocation()
+  if (location.pathname === '/showcase') return <Showcase />
+
   const { session, loading, authorized, signOut, role, orgId, orgData, needsOnboarding, isSuperAdmin } = useAuth()
   const { loading: dataLoading } = useStore()
   const trial = useTrial(orgId)

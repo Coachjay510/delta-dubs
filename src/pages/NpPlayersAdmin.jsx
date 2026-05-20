@@ -821,6 +821,7 @@ function PlayersSection({ filtered, players, search, setSearch, filter, setFilte
                           <ActionBtn onClick={() => openEdit(p)}>Edit</ActionBtn>
                           <ActionBtn onClick={() => openEditStats(p)}>Stats</ActionBtn>
                           <ActionBtn onClick={() => openAddGame(p)}>+Game</ActionBtn>
+                          <ActionBtn onClick={() => window.location.href = `/measure?playerId=${p.id}&name=${encodeURIComponent(p.name || '')}`}>📏 Measure</ActionBtn>
                         </div>
                       </td>
                     </tr>

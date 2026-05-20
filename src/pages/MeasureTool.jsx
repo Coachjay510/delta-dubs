@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { supabasePlayers } from '../lib/supabasePlayers'
 
 const DOOR_HEIGHT_INCHES = 80
 
@@ -22,6 +23,10 @@ const STEPS = [
 ]
 
 export default function MeasureTool() {
+  const params     = new URLSearchParams(window.location.search)
+  const playerId   = params.get('playerId')
+  const playerName = params.get('name') ? decodeURIComponent(params.get('name')) : null
+
   const videoRef   = useRef(null)
   const overlayRef = useRef(null)
   const streamRef  = useRef(null)
@@ -31,6 +36,8 @@ export default function MeasureTool() {
   const [results, setResults] = useState(null)
   const [camErr,  setCamErr]  = useState(null)
   const [vidSize, setVidSize] = useState({ w: 1280, h: 720 })
+  const [saving,  setSaving]  = useState(false)
+  const [saved,   setSaved]   = useState(false)
 
   // Start back camera
   useEffect(() => {
@@ -123,7 +130,18 @@ export default function MeasureTool() {
     }
   }, [step, points])
 
-  const reset = () => { setStep(0); setPoints([]); setResults(null) }
+  const reset = () => { setStep(0); setPoints([]); setResults(null); setSaved(false) }
+
+  async function saveToProfile() {
+    if (!playerId || !results) return
+    setSaving(true)
+    await supabasePlayers.from('players').update({
+      height_inches:  Math.round(results.height),
+      wingspan_inches: Math.round(results.wingspan),
+    }).eq('id', playerId)
+    setSaving(false)
+    setSaved(true)
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -140,12 +158,18 @@ export default function MeasureTool() {
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 40px' }}>
 
       {/* Header */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text1)', letterSpacing: 1 }}>
-          MEASURE
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
-          Height & Wingspan — door frame calibration
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={() => window.history.back()}
+          style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18, padding: 0 }}>
+          ←
+        </button>
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text1)', letterSpacing: 1 }}>
+            MEASURE
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>
+            {playerName ? `${playerName} — height & wingspan` : 'Height & Wingspan — door frame calibration'}
+          </div>
         </div>
       </div>
 
@@ -255,9 +279,26 @@ export default function MeasureTool() {
             </span>
           </div>
 
-          <button className="btn btn-secondary" onClick={reset} style={{ marginTop: 16, width: '100%' }}>
-            Measure Again
-          </button>
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <button className="btn btn-secondary" onClick={reset} style={{ flex: 1 }}>
+              Measure Again
+            </button>
+            {playerId && (
+              <button
+                className="btn btn-primary"
+                onClick={saveToProfile}
+                disabled={saving || saved}
+                style={{ flex: 1 }}
+              >
+                {saved ? '✓ Saved' : saving ? 'Saving…' : `Save to ${playerName ? playerName.split(' ')[0] : 'Profile'}`}
+              </button>
+            )}
+          </div>
+          {saved && (
+            <div style={{ marginTop: 10, fontSize: 12, color: 'var(--np-green2)', textAlign: 'center' }}>
+              Height & wingspan saved to {playerName}'s profile.
+            </div>
+          )}
         </div>
       )}
 

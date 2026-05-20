@@ -2,6 +2,26 @@ import { useState, useEffect, useMemo } from 'react'
 import { supabasePlayers } from '../lib/supabasePlayers'
 import ddLogo from '../assets/dd-logo.png'
 
+function getYouTubeEmbedUrl(url) {
+  if (!url) return null
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtu\.be\/([^?]+)/,
+    /youtube\.com\/shorts\/([^?]+)/,
+    /youtube\.com\/embed\/([^?]+)/,
+  ]
+  for (const p of patterns) {
+    const m = url.match(p)
+    if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1`
+  }
+  return null
+}
+
+function isDirectVideo(url) {
+  if (!url) return false
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)
+}
+
 // ── Brand colors ──────────────────────────────────────────────────────────────
 const G = {
   bg:      '#04090a',
@@ -276,22 +296,45 @@ function PlayerModal({ player, stats, onClose }) {
               </div>
             )}
 
-            {/* Film + contact */}
-            <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-              {player.hudl_url && (
-                <a href={player.hudl_url} target="_blank" rel="noopener noreferrer" style={{
-                  background:G.green2, color:'#fff', border:'none', borderRadius:10,
-                  padding:'10px 20px', fontSize:13, fontWeight:700, cursor:'pointer',
-                  textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
-                }}>▶ View Film (Hudl)</a>
-              )}
-              <a href={`mailto:deltadubs.aau@gmail.com?subject=Recruiting Inquiry — ${player.first_name} ${player.last_name}&body=Hello Coach Johnson,%0A%0AI am interested in learning more about ${player.first_name} ${player.last_name}.%0A%0A`}
-                style={{
-                  background: G.orange, color:'#fff', border:'none', borderRadius:10,
-                  padding:'10px 20px', fontSize:13, fontWeight:700, cursor:'pointer',
-                  textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
-                }}>✉ Request Info</a>
-            </div>
+            {/* Film embed */}
+            {player.film_url && (() => {
+              const embedUrl = getYouTubeEmbedUrl(player.film_url)
+              const isDirect = isDirectVideo(player.film_url)
+              return (
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:11, color:G.text3, letterSpacing:2, textTransform:'uppercase', marginBottom:10 }}>Film</div>
+                  {embedUrl ? (
+                    <div style={{ position:'relative', paddingBottom:'56.25%', borderRadius:12, overflow:'hidden', background:'#000' }}>
+                      <iframe
+                        src={embedUrl}
+                        title="Player Film"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }}
+                      />
+                    </div>
+                  ) : isDirect ? (
+                    <video controls style={{ width:'100%', borderRadius:12, background:'#000' }}>
+                      <source src={player.film_url} />
+                    </video>
+                  ) : (
+                    <a href={player.film_url} target="_blank" rel="noopener noreferrer" style={{
+                      background:G.green2, color:'#fff', borderRadius:10,
+                      padding:'10px 20px', fontSize:13, fontWeight:700,
+                      textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+                    }}>▶ View Film</a>
+                  )}
+                </div>
+              )
+            })()}
+
+            {/* Contact */}
+            <a href={`mailto:deltadubs.aau@gmail.com?subject=Recruiting Inquiry — ${player.first_name} ${player.last_name}&body=Hello Coach Johnson,%0A%0AI am interested in learning more about ${player.first_name} ${player.last_name}.%0A%0A`}
+              style={{
+                background: G.orange, color:'#fff', border:'none', borderRadius:10,
+                padding:'10px 20px', fontSize:13, fontWeight:700, cursor:'pointer',
+                textDecoration:'none', display:'inline-flex', alignItems:'center', gap:6,
+              }}>✉ Request Info — Coach Johnson</a>
           </div>
         </div>
       </div>

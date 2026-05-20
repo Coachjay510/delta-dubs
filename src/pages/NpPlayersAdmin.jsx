@@ -7,7 +7,7 @@ const POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C']
 
 const BLANK_PLAYER = {
   name: '', position: '', jersey_number: '', grad_year: '',
-  school_name: '', np_team_name: '', bio: '',
+  school_name: '', np_team_name: '', bio: '', film_url: '', gpa: '',
 }
 const BLANK_GAME = {
   game_date: '', opponent: '', source: 'aau',
@@ -193,7 +193,7 @@ function AdminInner() {
       name: player.name ?? '', position: player.position ?? '',
       jersey_number: player.jersey_number ?? '', grad_year: player.grad_year ?? '',
       school_name: player.school_name ?? '', np_team_name: player.np_team_name ?? '',
-      bio: player.bio ?? '',
+      bio: player.bio ?? '', film_url: player.film_url ?? '', gpa: player.gpa ?? '',
     })
     setPhotoFile(null)
     setEditPlayer(player)
@@ -210,6 +210,8 @@ function AdminInner() {
       school_name:   draft.school_name.trim() || null,
       np_team_name:  draft.np_team_name.trim() || null,
       bio:           draft.bio.trim() || null,
+      film_url:      draft.film_url?.trim() || null,
+      gpa:           draft.gpa?.trim() || null,
     }
     let pid = editPlayer === 'new' ? null : editPlayer.id
     if (editPlayer === 'new') {
@@ -441,6 +443,20 @@ function AdminInner() {
                 <textarea className="form-input" rows={2} placeholder="Player bio…"
                   value={draft.bio}
                   onChange={e => setDraft(d => ({ ...d, bio: e.target.value }))} />
+              </div>
+              <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Film URL (YouTube or video link)</label>
+                  <input className="form-input" type="url" placeholder="https://youtube.com/watch?v=..."
+                    value={draft.film_url}
+                    onChange={e => setDraft(d => ({ ...d, film_url: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">GPA</label>
+                  <input className="form-input" type="text" placeholder="3.5"
+                    value={draft.gpa}
+                    onChange={e => setDraft(d => ({ ...d, gpa: e.target.value }))} />
+                </div>
               </div>
               <div className="form-group" style={{ marginTop: 12 }}>
                 <label className="form-label">Photo</label>

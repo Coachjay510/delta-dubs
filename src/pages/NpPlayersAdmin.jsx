@@ -7,7 +7,7 @@ const POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C']
 
 const BLANK_PLAYER = {
   name: '', position: '', jersey_number: '', grad_year: '',
-  school_name: '', np_team_name: '', bio: '', film_url: '', gpa: '',
+  school_name: '', np_team_name: '', bio: '', film_url: '', film_url_2: '', gpa: '',
 }
 const BLANK_GAME = {
   game_date: '', opponent: '', source: 'aau',
@@ -193,7 +193,7 @@ function AdminInner() {
       name: player.name ?? '', position: player.position ?? '',
       jersey_number: player.jersey_number ?? '', grad_year: player.grad_year ?? '',
       school_name: player.school_name ?? '', np_team_name: player.np_team_name ?? '',
-      bio: player.bio ?? '', film_url: player.film_url ?? '', gpa: player.gpa ?? '',
+      bio: player.bio ?? '', film_url: player.film_url ?? '', film_url_2: player.film_url_2 ?? '', gpa: player.gpa ?? '',
     })
     setPhotoFile(null)
     setEditPlayer(player)
@@ -211,6 +211,7 @@ function AdminInner() {
       np_team_name:  draft.np_team_name.trim() || null,
       bio:           draft.bio.trim() || null,
       film_url:      draft.film_url?.trim() || null,
+      film_url_2:    draft.film_url_2?.trim() || null,
       gpa:           draft.gpa?.trim() || null,
     }
     let pid = editPlayer === 'new' ? null : editPlayer.id
@@ -446,10 +447,16 @@ function AdminInner() {
               </div>
               <div className="grid-2" style={{ gap: 12, marginTop: 12 }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Film URL (YouTube or video link)</label>
-                  <input className="form-input" type="url" placeholder="https://youtube.com/watch?v=..."
+                  <label className="form-label">Film URL — Clip 1</label>
+                  <input className="form-input" type="url" placeholder="https://youtu.be/..."
                     value={draft.film_url}
                     onChange={e => setDraft(d => ({ ...d, film_url: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Film URL — Clip 2</label>
+                  <input className="form-input" type="url" placeholder="https://youtu.be/..."
+                    value={draft.film_url_2}
+                    onChange={e => setDraft(d => ({ ...d, film_url_2: e.target.value }))} />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">GPA</label>

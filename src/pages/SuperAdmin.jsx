@@ -1004,7 +1004,7 @@ export default function SuperAdmin() {
 function ShowcaseTab() {
   const [players,  setPlayers]  = useState([])
   const [loading,  setLoading]  = useState(true)
-  const [editing,  setEditing]  = useState({})   // { [id]: { accolade, film_url, gpa, bio } }
+  const [editing,  setEditing]  = useState({})   // { [id]: { accolade, film_url, film_url_2, gpa, bio } }
   const [saving,   setSaving]   = useState({})   // { [id]: bool }
 
   useEffect(() => { fetchPlayers() }, [])
@@ -1013,7 +1013,7 @@ function ShowcaseTab() {
     setLoading(true)
     const { data } = await supabasePlayers
       .from('players')
-      .select('id, name, position, grad_year, np_team_name, photo_url, is_featured, accolade, film_url, gpa, bio')
+      .select('id, name, position, grad_year, np_team_name, photo_url, is_featured, accolade, film_url, film_url_2, gpa, bio')
       .not('name', 'is', null)
       .order('is_featured', { ascending: false })
       .order('grad_year', { ascending: true })
@@ -1031,7 +1031,7 @@ function ShowcaseTab() {
   function startEdit(p) {
     setEditing(prev => ({
       ...prev,
-      [p.id]: { accolade: p.accolade ?? '', film_url: p.film_url ?? '', gpa: p.gpa ?? '', bio: p.bio ?? '' },
+      [p.id]: { accolade: p.accolade ?? '', film_url: p.film_url ?? '', film_url_2: p.film_url_2 ?? '', gpa: p.gpa ?? '', bio: p.bio ?? '' },
     }))
   }
 
@@ -1045,9 +1045,10 @@ function ShowcaseTab() {
     setSaving(prev => ({ ...prev, [p.id]: true }))
     const payload = {
       accolade: draft.accolade.trim() || null,
-      film_url:  draft.film_url.trim() || null,
-      gpa:       draft.gpa !== '' ? parseFloat(draft.gpa) : null,
-      bio:       draft.bio.trim() || null,
+      film_url:   draft.film_url.trim() || null,
+      film_url_2: draft.film_url_2.trim() || null,
+      gpa:        draft.gpa !== '' ? parseFloat(draft.gpa) : null,
+      bio:        draft.bio.trim() || null,
     }
     await supabasePlayers.from('players').update(payload).eq('id', p.id)
     setPlayers(prev => prev.map(x => x.id === p.id ? { ...x, ...payload } : x))
@@ -1093,7 +1094,8 @@ function ShowcaseTab() {
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FEATURED</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>ACCOLADE</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>BIO</th>
-                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FILM URL</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FILM CLIP 1</th>
+                <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>FILM CLIP 2</th>
                 <th style={{ padding:'10px 14px', textAlign:'left', fontSize:11, color:'var(--text3)', fontWeight:600, letterSpacing:1 }}>GPA</th>
                 <th style={{ padding:'10px 14px' }}></th>
               </tr>
@@ -1168,18 +1170,25 @@ function ShowcaseTab() {
                         </span>
                       )}
                     </td>
-                    <td style={{ padding:'10px 14px', maxWidth:160 }}>
+                    <td style={{ padding:'10px 14px', maxWidth:140 }}>
                       {ed ? (
-                        <input
-                          className="form-input"
-                          style={{ fontSize:12, padding:'4px 8px', marginBottom:0 }}
-                          value={ed.film_url}
-                          placeholder="YouTube or video URL"
-                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], film_url: e.target.value } }))}
-                        />
+                        <input className="form-input" style={{ fontSize:12, padding:'4px 8px', marginBottom:0 }}
+                          value={ed.film_url} placeholder="youtu.be/..."
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], film_url: e.target.value } }))} />
                       ) : (
                         <span style={{ fontSize:12, color: p.film_url ? '#60a5fa' : 'var(--text3)' }}>
-                          {p.film_url ? '▶ Linked' : '—'}
+                          {p.film_url ? '▶ Clip 1' : '—'}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding:'10px 14px', maxWidth:140 }}>
+                      {ed ? (
+                        <input className="form-input" style={{ fontSize:12, padding:'4px 8px', marginBottom:0 }}
+                          value={ed.film_url_2} placeholder="youtu.be/..."
+                          onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], film_url_2: e.target.value } }))} />
+                      ) : (
+                        <span style={{ fontSize:12, color: p.film_url_2 ? '#60a5fa' : 'var(--text3)' }}>
+                          {p.film_url_2 ? '▶ Clip 2' : '—'}
                         </span>
                       )}
                     </td>

@@ -91,8 +91,10 @@ function PlayerModal({ player, stats, onClose }) {
     return () => { window.removeEventListener('keydown', esc); document.body.style.overflow = '' }
   }, [onClose])
 
-  const embedUrl = getYouTubeEmbedUrl(player.film_url)
-  const isDirect = isDirectVideo(player.film_url)
+  const embedUrl  = getYouTubeEmbedUrl(player.film_url)
+  const isDirect  = isDirectVideo(player.film_url)
+  const embedUrl2 = getYouTubeEmbedUrl(player.film_url_2)
+  const isDirect2 = isDirectVideo(player.film_url_2)
 
   return (
     <div onClick={onClose} style={{
@@ -206,10 +208,12 @@ function PlayerModal({ player, stats, onClose }) {
             )}
 
             {/* Film */}
-            {player.film_url && (
+            {(player.film_url || player.film_url_2) && (
               <div style={{ marginTop:18 }}>
-                <div style={{ fontSize:10, color:G.text3, letterSpacing:2, textTransform:'uppercase', marginBottom:8 }}>Film</div>
-                {embedUrl
+                <div style={{ fontSize:10, color:G.text3, letterSpacing:2, textTransform:'uppercase', marginBottom:8 }}>
+                  Film{player.film_url && player.film_url_2 ? ' — Clip 1' : ''}
+                </div>
+                {player.film_url && (embedUrl
                   ? <div style={{ position:'relative', paddingBottom:'56.25%', borderRadius:10, overflow:'hidden', background:'#000' }}>
                       <iframe src={embedUrl} title="Film" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
                         style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }} />
@@ -220,7 +224,26 @@ function PlayerModal({ player, stats, onClose }) {
                         background:G.green2, color:'#fff', borderRadius:10, padding:'10px 18px',
                         fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-block',
                       }}>▶ View Film</a>
-                }
+                )}
+                {player.film_url_2 && (
+                  <div style={{ marginTop:14 }}>
+                    <div style={{ fontSize:10, color:G.text3, letterSpacing:2, textTransform:'uppercase', marginBottom:8 }}>
+                      {player.film_url ? 'Film — Clip 2' : 'Film'}
+                    </div>
+                    {embedUrl2
+                      ? <div style={{ position:'relative', paddingBottom:'56.25%', borderRadius:10, overflow:'hidden', background:'#000' }}>
+                          <iframe src={embedUrl2} title="Film 2" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen
+                            style={{ position:'absolute', top:0, left:0, width:'100%', height:'100%', border:'none' }} />
+                        </div>
+                      : isDirect2
+                        ? <video controls style={{ width:'100%', borderRadius:10 }}><source src={player.film_url_2}/></video>
+                        : <a href={player.film_url_2} target="_blank" rel="noopener noreferrer" style={{
+                            background:G.green2, color:'#fff', borderRadius:10, padding:'10px 18px',
+                            fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-block',
+                          }}>▶ View Clip 2</a>
+                    }
+                  </div>
+                )}
               </div>
             )}
 

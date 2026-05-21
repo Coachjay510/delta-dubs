@@ -11,6 +11,7 @@ import posthog from 'posthog-js'
 inject()
 if (import.meta.env.VITE_POSTHOG_KEY) {
   posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    loaded: (ph) => ph.register({ app_name: 'Showcase & Manager' }),
     api_host: 'https://us.i.posthog.com',
     person_profiles: 'identified_only',
     capture_pageview: true,

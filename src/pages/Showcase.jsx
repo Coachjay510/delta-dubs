@@ -421,7 +421,12 @@ export default function Showcase() {
   }, [])
 
   const spotlight = useMemo(() =>
-    players.filter(p => p.is_featured).sort((a, b) => (a.grad_year || 9999) - (b.grad_year || 9999))
+    players.filter(p => p.is_featured).sort((a, b) => {
+      const gA = a.gender === 'F' ? 1 : 0
+      const gB = b.gender === 'F' ? 1 : 0
+      if (gA !== gB) return gA - gB
+      return (a.grad_year || 9999) - (b.grad_year || 9999)
+    })
   , [players])
 
   const teams = useMemo(() => {
